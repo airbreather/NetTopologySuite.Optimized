@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26020.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetTopologySuite.Optimized", "NetTopologySuite.Optimized\NetTopologySuite.Optimized.csproj", "{A9020EA0-C05E-4543-AFBE-38F59C3AFA6D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetTopologySuite.Optimized.Tests", "NetTopologySuite.Optimized.Tests\NetTopologySuite.Optimized.Tests.csproj", "{C25AFB43-3818-482E-8749-D179C2E5B39B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{A9020EA0-C05E-4543-AFBE-38F59C3AFA6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A9020EA0-C05E-4543-AFBE-38F59C3AFA6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A9020EA0-C05E-4543-AFBE-38F59C3AFA6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C25AFB43-3818-482E-8749-D179C2E5B39B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C25AFB43-3818-482E-8749-D179C2E5B39B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C25AFB43-3818-482E-8749-D179C2E5B39B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C25AFB43-3818-482E-8749-D179C2E5B39B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
