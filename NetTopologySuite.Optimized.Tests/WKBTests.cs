@@ -23,7 +23,7 @@ namespace NetTopologySuite.Optimized.Tests
         public void RoundTripAOS()
         {
             IGeometryServices services = new NtsGeometryServices(PackedCoordinateSequenceFactory.DoubleFactory, NtsGeometryServices.Instance.DefaultPrecisionModel, NtsGeometryServices.Instance.DefaultSRID);
-            var reader = new OptimizedWKBReader(services.CreateGeometryFactory());
+            var reader = new OptimizedWKBReader(services.CreateGeometryFactory()) { CoordinatePackingMode = CoordinatePackingMode.AOS };
 
             IGeometry geom = reader.Read(wkb);
             ////Assert.True(geom.IsValid);
@@ -36,7 +36,7 @@ namespace NetTopologySuite.Optimized.Tests
         public void RoundTripSOA()
         {
             IGeometryServices services = new NtsGeometryServices(SOACoordinateSequenceFactory.Instance, NtsGeometryServices.Instance.DefaultPrecisionModel, NtsGeometryServices.Instance.DefaultSRID);
-            var reader = new OptimizedWKBReader(services.CreateGeometryFactory());
+            var reader = new OptimizedWKBReader(services.CreateGeometryFactory()) { CoordinatePackingMode = CoordinatePackingMode.SOA };
 
             IGeometry geom = reader.Read(wkb);
             ////Assert.True(geom.IsValid);
