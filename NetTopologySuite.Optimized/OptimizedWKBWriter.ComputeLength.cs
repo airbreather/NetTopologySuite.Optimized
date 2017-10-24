@@ -54,7 +54,7 @@ namespace NetTopologySuite.Optimized
 
         private static void AddLength(IPolygon polygon, ref int length)
         {
-            // Int32 numPoints
+            // Int32 numRings
             length += 4;
 
             AddLength(polygon.Shell, ref length);
@@ -69,7 +69,7 @@ namespace NetTopologySuite.Optimized
 
         private static void AddLength(IGeometryCollection geometryCollection, ref int length)
         {
-            // Int32 numPoints
+            // Int32 numGeoms
             length += 4;
 
             foreach (var geom in geometryCollection.Geometries)

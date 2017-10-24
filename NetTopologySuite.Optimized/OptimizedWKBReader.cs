@@ -179,7 +179,7 @@ namespace NetTopologySuite.Optimized
 
         private static T Read<T>(byte[] arr, ref int pos)
         {
-            T result = Unsafe.As<byte, T>(ref arr[pos]);
+            T result = Unsafe.ReadUnaligned<T>(ref arr[pos]);
             pos += Unsafe.SizeOf<T>();
             return result;
         }

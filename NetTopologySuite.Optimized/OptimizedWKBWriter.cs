@@ -22,41 +22,26 @@ namespace NetTopologySuite.Optimized
         public static void Write(IGeometry geometry, byte[] arr, ref int pos)
         {
             WriteVal(ByteOrder.LittleEndian, arr, ref pos);
+            WriteVal((WKBGeometryTypes)geometry.OgcGeometryType, arr, ref pos);
             switch (geometry.OgcGeometryType)
             {
                 case OgcGeometryType.LineString:
-                    WriteVal(WKBGeometryTypes.WKBLineString, arr, ref pos);
                     Write((ILineString)geometry, arr, ref pos);
                     break;
 
                 case OgcGeometryType.Polygon:
-                    WriteVal(WKBGeometryTypes.WKBPolygon, arr, ref pos);
                     Write((IPolygon)geometry, arr, ref pos);
                     break;
 
                 case OgcGeometryType.Point:
-                    WriteVal(WKBGeometryTypes.WKBPoint, arr, ref pos);
                     Write((IPoint)geometry, arr, ref pos);
                     break;
 
                 case OgcGeometryType.GeometryCollection:
-                    WriteVal(WKBGeometryTypes.WKBGeometryCollection, arr, ref pos);
-                    Write((IGeometryCollection)geometry, arr, ref pos);
-                    break;
-
-                case OgcGeometryType.MultiPolygon:
-                    WriteVal(WKBGeometryTypes.WKBMultiPolygon, arr, ref pos);
-                    Write((IMultiPolygon)geometry, arr, ref pos);
-                    break;
-
-                case OgcGeometryType.MultiLineString:
-                    WriteVal(WKBGeometryTypes.WKBMultiLineString, arr, ref pos);
-                    Write((IMultiLineString)geometry, arr, ref pos);
-                    break;
-
                 case OgcGeometryType.MultiPoint:
-                    WriteVal(WKBGeometryTypes.WKBMultiPoint, arr, ref pos);
-                    Write((IMultiPoint)geometry, arr, ref pos);
+                case OgcGeometryType.MultiPolygon:
+                case OgcGeometryType.MultiLineString:
+                    Write((IGeometryCollection)geometry, arr, ref pos);
                     break;
 
                 default:
@@ -165,7 +150,7 @@ namespace NetTopologySuite.Optimized
 
         private static void WriteVal<T>(T value, byte[] arr, ref int pos)
         {
-            Unsafe.As<byte, T>(ref arr[pos]) = value;
+            Unsafe.WriteUnaligned(ref arr[pos], value);
             pos += Unsafe.SizeOf<T>();
         }
     }
