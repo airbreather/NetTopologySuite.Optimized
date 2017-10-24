@@ -5,6 +5,7 @@ using GeoAPI;
 using GeoAPI.Geometries;
 
 using NetTopologySuite.Geometries.Implementation;
+using NetTopologySuite.Optimized.Raw;
 
 using Xunit;
 using Xunit.Abstractions;
@@ -22,27 +23,35 @@ namespace NetTopologySuite.Optimized.Tests
         [Fact]
         public void RoundTripAOS()
         {
-            IGeometryServices services = new NtsGeometryServices(PackedCoordinateSequenceFactory.DoubleFactory, NtsGeometryServices.Instance.DefaultPrecisionModel, NtsGeometryServices.Instance.DefaultSRID);
-            var reader = new OptimizedWKBReader(services.CreateGeometryFactory()) { CoordinatePackingMode = CoordinatePackingMode.AOS };
+            var services = new NtsGeometryServices(PackedCoordinateSequenceFactory.DoubleFactory, NtsGeometryServices.Instance.DefaultPrecisionModel, NtsGeometryServices.Instance.DefaultSRID);
+            var factory = services.CreateGeometryFactory();
+            var reader = new OptimizedWKBReader(factory) { CoordinatePackingMode = CoordinatePackingMode.AOS };
 
             IGeometry geom = reader.Read(wkb);
             ////Assert.True(geom.IsValid);
 
             ReadOnlySpan<byte> rtWkb = OptimizedWKBWriter.Write(geom);
             Assert.True(rtWkb.SequenceEqual(wkb));
+
+            var geom2 = new Polygon(new RawGeometry(wkb)).ToGeoAPI(factory);
+            Assert.True(geom.EqualsExact(geom2));
         }
 
         [Fact]
         public void RoundTripSOA()
         {
-            IGeometryServices services = new NtsGeometryServices(SOACoordinateSequenceFactory.Instance, NtsGeometryServices.Instance.DefaultPrecisionModel, NtsGeometryServices.Instance.DefaultSRID);
-            var reader = new OptimizedWKBReader(services.CreateGeometryFactory()) { CoordinatePackingMode = CoordinatePackingMode.SOA };
+            var services = new NtsGeometryServices(SOACoordinateSequenceFactory.Instance, NtsGeometryServices.Instance.DefaultPrecisionModel, NtsGeometryServices.Instance.DefaultSRID);
+            var factory = services.CreateGeometryFactory();
+            var reader = new OptimizedWKBReader(factory) { CoordinatePackingMode = CoordinatePackingMode.SOA };
 
             IGeometry geom = reader.Read(wkb);
             ////Assert.True(geom.IsValid);
 
             ReadOnlySpan<byte> rtWkb = OptimizedWKBWriter.Write(geom);
             Assert.True(rtWkb.SequenceEqual(wkb));
+
+            var geom2 = new Polygon(new RawGeometry(wkb)).ToGeoAPI(factory);
+            Assert.True(geom.EqualsExact(geom2));
         }
     }
 }
