@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 
-using GeoAPI;
 using GeoAPI.Geometries;
 
 using NetTopologySuite.Geometries.Implementation;

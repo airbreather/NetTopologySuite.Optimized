@@ -12,23 +12,38 @@ namespace NetTopologySuite.Optimized
                 throw new ArgumentOutOfRangeException(nameof(distanceTolerance), distanceTolerance, "Must be finite (not NaN or infinity)");
             }
 
-            if (inputCoords.IsEmpty || distanceTolerance <= 0)
+            if (distanceTolerance <= 0)
             {
                 return 0;
             }
 
             Span<bool> includes;
-            if (inputCoords.Length < 1024)
+            switch (inputCoords.Length)
             {
-                includes = stackalloc bool[inputCoords.Length];
-                includes.Fill(false);
-            }
-            else
-            {
-                includes = new bool[inputCoords.Length];
-            }
+                case 0:
+                    return 0;
 
-            SimplifyCore(inputCoords, includes, distanceTolerance);
+                case 1:
+                case 2:
+                    includes = stackalloc bool[inputCoords.Length];
+                    includes[0] = true;
+                    includes[includes.Length - 1] = true;
+                    break;
+
+                default:
+                    if (inputCoords.Length < 1024)
+                    {
+                        includes = stackalloc bool[inputCoords.Length];
+                        includes.Fill(false);
+                    }
+                    else
+                    {
+                        includes = new bool[inputCoords.Length];
+                    }
+
+                    SimplifyCore(inputCoords, includes, distanceTolerance);
+                    break;
+            }
 
             int cnt = 0;
             for (int i = 0; i < includes.Length; i++)
@@ -58,17 +73,21 @@ namespace NetTopologySuite.Optimized
 
         private static void SimplifyCore(ReadOnlySpan<Raw.Coordinate> coords, Span<bool> includes, double distanceTolerance)
         {
-            if (coords.Length < 3)
+            if (includes.Length == 2)
             {
-                includes.Fill(true);
+                includes[0] = true;
+                includes[1] = true;
                 return;
             }
 
-            LineSegment l = new LineSegment(coords[0], coords[coords.Length - 1]);
+            // work around dotnet/coreclr#16470 by making copies.
+            Raw.Coordinate p0 = new Raw.Coordinate(coords[0]);
+            Raw.Coordinate p1 = new Raw.Coordinate(coords[coords.Length - 1]);
+            LineSegment l = new LineSegment(p0, p1);
 
             double maxDistance = -1;
             int maxIndex = 0;
-            for (int i = 1; i < coords.Length; i++)
+            for (int i = 1; i < coords.Length - 1; i++)
             {
                 double distance = l.DistanceTo(coords[i]);
                 if (distance > maxDistance)
@@ -78,9 +97,14 @@ namespace NetTopologySuite.Optimized
                 }
             }
 
-            if (distanceTolerance < maxDistance)
+            if (maxDistance <= distanceTolerance)
             {
-                SimplifyCore(coords.Slice(0, maxIndex), includes.Slice(0, maxIndex), distanceTolerance);
+                includes[0] = true;
+                includes[includes.Length - 1] = true;
+            }
+            else
+            {
+                SimplifyCore(coords.Slice(0, maxIndex + 1), includes.Slice(0, maxIndex + 1), distanceTolerance);
                 SimplifyCore(coords.Slice(maxIndex), includes.Slice(maxIndex), distanceTolerance);
             }
         }
@@ -100,8 +124,8 @@ namespace NetTopologySuite.Optimized
                 A = p0;
                 B = p1;
 
-                dx = p0.X - p1.X;
-                dy = p0.Y - p1.Y;
+                dx = p1.X - p0.X;
+                dy = p1.Y - p0.Y;
 
                 len2 = dx * dx + dy * dy;
                 len = Math.Sqrt(len2);
@@ -133,8 +157,8 @@ namespace NetTopologySuite.Optimized
 
             private static double Distance(Raw.Coordinate p0, Raw.Coordinate p1)
             {
-                double dx = p0.X - p1.X;
-                double dy = p0.Y - p1.Y;
+                double dx = p1.X - p0.X;
+                double dy = p1.Y - p0.Y;
                 return Math.Sqrt(dx * dx + dy * dy);
             }
         }

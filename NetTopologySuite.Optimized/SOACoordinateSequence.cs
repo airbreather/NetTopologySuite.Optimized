@@ -56,7 +56,7 @@ namespace NetTopologySuite.Optimized
         int ICoordinateSequence.Dimension => 2;
         Ordinates ICoordinateSequence.Ordinates => Ordinates.XY;
 
-        object GeoAPI.ICloneable.Clone() => this.Clone();
+        object ICloneable.Clone() => this.Clone();
         public SOACoordinateSequence Clone() => new SOACoordinateSequence(CloneVals(this.Xs), CloneVals(this.Ys));
 
         public Envelope ExpandEnvelope(Envelope env)

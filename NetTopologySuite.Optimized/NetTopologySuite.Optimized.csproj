@@ -8,9 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeoAPI" Version="1.7.5-pre007" />
-    <PackageReference Include="NetTopologySuite" Version="1.15.0-pre029" />
-    <PackageReference Include="System.Memory" Version="4.4.0-preview2-25405-01" />
+    <PackageReference Include="GeoAPI" Version="1.7.5-pre011" />
+    <PackageReference Include="NetTopologySuite" Version="1.15.0-pre052" />
+    <PackageReference Include="System.Memory" Version="4.4.0-preview1-25305-02" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.4.0" />
   </ItemGroup>
 </Project>

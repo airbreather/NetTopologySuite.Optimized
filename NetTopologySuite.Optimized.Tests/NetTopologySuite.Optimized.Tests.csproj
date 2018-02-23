@@ -9,18 +9,18 @@
   <ItemGroup>
     <ProjectReference Include="..\NetTopologySuite.Optimized\NetTopologySuite.Optimized.csproj" />
 
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0-preview-20171012-09" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0-preview-20180221-13" />
 
-    <PackageReference Include="GeoAPI" Version="1.7.5-pre007" />
-    <PackageReference Include="NetTopologySuite" Version="1.15.0-pre029" />
-    <PackageReference Include="System.Memory" Version="4.4.0-preview2-25405-01" />
-    <PackageReference Include="xunit" Version="2.3.1-rc2-build3844" />
+    <PackageReference Include="GeoAPI" Version="1.7.5-pre011" />
+    <PackageReference Include="NetTopologySuite" Version="1.15.0-pre052" />
+    <PackageReference Include="System.Memory" Version="4.4.0-preview1-25305-02" />
+    <PackageReference Include="xunit" Version="2.4.0-beta.1.build3958" />
     <PackageReference Include="xunit.abstractions" Version="2.0.1" />
-    <PackageReference Include="xunit.analyzers" Version="0.7.0" />
-    <PackageReference Include="xunit.assert" Version="2.3.1-rc2-build3844" />
-    <PackageReference Include="xunit.core" Version="2.3.1-rc2-build3844" />
-    <PackageReference Include="xunit.extensibility.core" Version="2.3.1-rc2-build3844" />
-    <PackageReference Include="xunit.extensibility.execution" Version="2.3.1-rc2-build3844" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1-rc2-build3844" />
+    <PackageReference Include="xunit.analyzers" Version="0.8.0" />
+    <PackageReference Include="xunit.assert" Version="2.4.0-beta.1.build3958" />
+    <PackageReference Include="xunit.core" Version="2.4.0-beta.1.build3958" />
+    <PackageReference Include="xunit.extensibility.core" Version="2.4.0-beta.1.build3958" />
+    <PackageReference Include="xunit.extensibility.execution" Version="2.4.0-beta.1.build3958" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0-beta.1.build3958" />
   </ItemGroup>
 </Project>
