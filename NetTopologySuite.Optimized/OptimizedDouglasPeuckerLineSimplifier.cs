@@ -12,37 +12,29 @@ namespace NetTopologySuite.Optimized
                 throw new ArgumentOutOfRangeException(nameof(distanceTolerance), distanceTolerance, "Must be finite (not NaN or infinity)");
             }
 
-            if (distanceTolerance <= 0)
+            if (inputCoords.Length == 0 || distanceTolerance <= 0)
             {
                 return 0;
             }
 
             Span<bool> includes;
-            switch (inputCoords.Length)
+            if (inputCoords.Length < 1024)
             {
-                case 0:
-                    return 0;
+                includes = stackalloc bool[inputCoords.Length];
+                includes.Fill(false);
+            }
+            else
+            {
+                includes = new bool[inputCoords.Length];
+            }
 
-                case 1:
-                case 2:
-                    includes = stackalloc bool[inputCoords.Length];
-                    includes[0] = true;
-                    includes[includes.Length - 1] = true;
-                    break;
-
-                default:
-                    if (inputCoords.Length < 1024)
-                    {
-                        includes = stackalloc bool[inputCoords.Length];
-                        includes.Fill(false);
-                    }
-                    else
-                    {
-                        includes = new bool[inputCoords.Length];
-                    }
-
-                    SimplifyCore(inputCoords, includes, distanceTolerance);
-                    break;
+            if (includes.Length == 1)
+            {
+                includes[0] = true;
+            }
+            else
+            {
+                SimplifyCore(inputCoords, includes, distanceTolerance);
             }
 
             int cnt = 0;
