@@ -33,7 +33,6 @@ namespace NetTopologySuite.Optimized.Raw
             uint packedTyp = Unsafe.ReadUnaligned<uint>(ref MemoryMarshal.GetReference(wkb.Slice(1)));
             if ((packedTyp & 0xE0000000) != 0)
             {
-                Console.WriteLine(packedTyp);
                 ThrowNotSupportedExceptionForBadDimension();
             }
 
