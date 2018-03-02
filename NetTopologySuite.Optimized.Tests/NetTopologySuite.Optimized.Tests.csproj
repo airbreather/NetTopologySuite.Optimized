@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <DebugType>full</DebugType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
@@ -11,9 +11,9 @@
 
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0-preview-20180221-13" />
 
-    <PackageReference Include="GeoAPI" Version="1.7.5-pre011" />
-    <PackageReference Include="NetTopologySuite" Version="1.15.0-pre052" />
-    <PackageReference Include="System.Memory" Version="4.4.0-preview1-25305-02" />
+    <PackageReference Include="GeoAPI" Version="1.7.5-pre020" />
+    <PackageReference Include="NetTopologySuite" Version="1.15.0-pre061" />
+    <PackageReference Include="System.Memory" Version="4.5.0-preview1-26216-02" />
     <PackageReference Include="xunit" Version="2.4.0-beta.1.build3958" />
     <PackageReference Include="xunit.abstractions" Version="2.0.1" />
     <PackageReference Include="xunit.analyzers" Version="0.8.0" />

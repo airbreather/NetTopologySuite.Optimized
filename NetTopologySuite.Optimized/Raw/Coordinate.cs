@@ -24,7 +24,7 @@ namespace NetTopologySuite.Optimized.Raw
 
         public override bool Equals(object obj) => obj is Coordinate other && this.Equals(other);
 
-        public bool Equals(Coordinate other) => (this.X, this.Y).Equals((other.X, other.Y));
+        public bool Equals(Coordinate other) => this.X == other.X && this.Y == other.Y;
 
         public override int GetHashCode() => (this.X, this.Y).GetHashCode();
 

@@ -2,7 +2,7 @@
 
 namespace NetTopologySuite.Optimized.Raw
 {
-    public struct Point
+    public ref struct Point
     {
         public RawGeometry RawGeometry;
 

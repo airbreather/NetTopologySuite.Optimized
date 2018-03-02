@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Runtime.CompilerServices;
 
 namespace NetTopologySuite.Optimized
@@ -17,26 +18,38 @@ namespace NetTopologySuite.Optimized
                 return 0;
             }
 
-            Span<bool> includes;
-            if (inputCoords.Length < 1024)
+            if (inputCoords.Length == 1)
             {
-                includes = stackalloc bool[inputCoords.Length];
-                includes.Fill(false);
-            }
-            else
-            {
-                includes = new bool[inputCoords.Length];
+                if (outputCoords.IsEmpty)
+                {
+                    ThrowExceptionForOutputCoordsTooShort();
+                }
+
+                outputCoords[0] = inputCoords[0];
+                return 1;
             }
 
-            if (includes.Length == 1)
+            // dotnet/roslyn#25118 is in the way of a straightforward stackalloc optimization here.
+            bool[] includeBuffer = ArrayPool<bool>.Shared.Rent(inputCoords.Length);
+            try
             {
-                includes[0] = true;
-            }
-            else
-            {
+                Span<bool> includes = new Span<bool>(includeBuffer, 0, inputCoords.Length);
+                includes.Clear();
+
                 SimplifyCore(inputCoords, includes, distanceTolerance);
-            }
 
+                return outputCoords.Length < inputCoords.Length
+                    ? CopyWithLengthChecks(inputCoords, outputCoords, includes)
+                    : CopyWithoutLengthChecks(inputCoords, outputCoords, includes);
+            }
+            finally
+            {
+                ArrayPool<bool>.Shared.Return(includeBuffer);
+            }
+        }
+
+        private static int CopyWithLengthChecks(ReadOnlySpan<Raw.Coordinate> inputCoords, Span<Raw.Coordinate> outputCoords, ReadOnlySpan<bool> includes)
+        {
             int cnt = 0;
             for (int i = 0; i < includes.Length; i++)
             {
@@ -45,9 +58,28 @@ namespace NetTopologySuite.Optimized
                     continue;
                 }
 
-                if (outputCoords.Length <= cnt)
+                if (outputCoords.Length == cnt)
                 {
-                    throw new ArgumentException("Must be large enough to hold all output coordinates.", nameof(outputCoords));
+                    ThrowExceptionForOutputCoordsTooShort();
+                }
+
+                outputCoords[cnt++] = inputCoords[i];
+            }
+
+            return cnt;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowExceptionForOutputCoordsTooShort() => throw new ArgumentException("Must be large enough to hold all output coordinates.", "outputCoords");
+
+        private static int CopyWithoutLengthChecks(ReadOnlySpan<Raw.Coordinate> inputCoords, Span<Raw.Coordinate> outputCoords, ReadOnlySpan<bool> includes)
+        {
+            int cnt = 0;
+            for (int i = 0; i < includes.Length; i++)
+            {
+                if (!includes[i])
+                {
+                    continue;
                 }
 
                 outputCoords[cnt++] = inputCoords[i];
@@ -101,15 +133,15 @@ namespace NetTopologySuite.Optimized
             }
         }
 
-        private struct LineSegment
+        private readonly struct LineSegment
         {
-            private Raw.Coordinate A;
-            private Raw.Coordinate B;
+            private readonly Raw.Coordinate A;
+            private readonly Raw.Coordinate B;
 
-            private double dx;
-            private double dy;
-            private double len2;
-            private double len;
+            private readonly double dx;
+            private readonly double dy;
+            private readonly double len2;
+            private readonly double len;
 
             public LineSegment(Raw.Coordinate p0, Raw.Coordinate p1)
             {

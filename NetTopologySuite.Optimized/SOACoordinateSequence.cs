@@ -56,8 +56,9 @@ namespace NetTopologySuite.Optimized
         int ICoordinateSequence.Dimension => 2;
         Ordinates ICoordinateSequence.Ordinates => Ordinates.XY;
 
-        object ICloneable.Clone() => this.Clone();
-        public SOACoordinateSequence Clone() => new SOACoordinateSequence(CloneVals(this.Xs), CloneVals(this.Ys));
+        object ICloneable.Clone() => this.Copy();
+        ICoordinateSequence ICoordinateSequence.Copy() => this.Copy();
+        public SOACoordinateSequence Copy() => new SOACoordinateSequence(CloneVals(this.Xs), CloneVals(this.Ys));
 
         public Envelope ExpandEnvelope(Envelope env)
         {
@@ -104,7 +105,7 @@ namespace NetTopologySuite.Optimized
         ICoordinateSequence ICoordinateSequence.Reversed() => this.Reversed();
         public SOACoordinateSequence Reversed()
         {
-            SOACoordinateSequence cloned = this.Clone();
+            SOACoordinateSequence cloned = this.Copy();
             Array.Reverse(cloned.Xs);
             Array.Reverse(cloned.Ys);
             return cloned;

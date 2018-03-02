@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace NetTopologySuite.Optimized.Raw
 {
@@ -29,7 +30,7 @@ namespace NetTopologySuite.Optimized.Raw
                 ReadOnlySpan<byte> residue = data.Slice(chunkedData.Length << 2);
                 uint h = 0;
 
-                fixed (uint* fChunkedData = &chunkedData.DangerousGetPinnableReference())
+                fixed (uint* fChunkedData = &MemoryMarshal.GetReference(chunkedData))
                 {
                     uint* pCur = fChunkedData;
                     uint* pEnd = fChunkedData + chunkedData.Length;

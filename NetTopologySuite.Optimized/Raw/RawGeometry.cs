@@ -2,7 +2,7 @@
 
 namespace NetTopologySuite.Optimized.Raw
 {
-    public struct RawGeometry
+    public ref struct RawGeometry
     {
         public ReadOnlySpan<byte> Data;
 

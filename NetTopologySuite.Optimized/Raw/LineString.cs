@@ -2,7 +2,7 @@
 
 namespace NetTopologySuite.Optimized.Raw
 {
-    public struct LineString
+    public ref struct LineString
     {
         public RawGeometry RawGeometry;
 
@@ -33,6 +33,6 @@ namespace NetTopologySuite.Optimized.Raw
 
         public bool EqualsExact(LineString other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
 
-        public override string ToString() => $"[Coordinates = {this.Coordinates}]";
+        public override string ToString() => $"[Coordinates = {this.Coordinates.ToString()}]";
     }
 }

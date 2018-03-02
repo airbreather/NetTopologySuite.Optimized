@@ -2,7 +2,7 @@
 
 namespace NetTopologySuite.Optimized.Raw
 {
-    public struct CoordinateSequence
+    public ref struct CoordinateSequence
     {
         public ReadOnlySpan<byte> PointData;
 
