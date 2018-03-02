@@ -25,7 +25,7 @@ namespace NetTopologySuite.Optimized.Raw
             }
 
             var rem = rawGeometry.Data.Slice(9);
-            for (int i = 0; i < ringCount && rem.Length >= 4; ++i)
+            for (int i = 0; i < ringCount && rem.Length >= 4; i++)
             {
                 int len = 4 + rem.NonPortableCast<byte, int>()[0] * 16;
                 var cs = new CoordinateSequence(rem.Slice(0, len));
@@ -48,7 +48,7 @@ namespace NetTopologySuite.Optimized.Raw
         public CoordinateSequence GetRing(int ringIndex)
         {
             var rem = this.RawGeometry.Data.Slice(9);
-            for (int i = 0; i < ringIndex; ++i)
+            for (int i = 0; i < ringIndex; i++)
             {
                 rem = rem.Slice(rem.NonPortableCast<byte, int>()[0] * 16 + 4);
             }
@@ -73,7 +73,7 @@ namespace NetTopologySuite.Optimized.Raw
                 ? Array.Empty< GeoAPI.Geometries.ILinearRing>()
                 : new GeoAPI.Geometries.ILinearRing[ringCount - 1];
 
-            for (int i = 0; i < holes.Length; ++i)
+            for (int i = 0; i < holes.Length; i++)
             {
                 ringLength = rem.NonPortableCast<byte, int>()[0] * 16 + 4;
                 holes[i] = factory.CreateLinearRing(new CoordinateSequence(rem.Slice(0, ringLength)).ToGeoAPI(factory.CoordinateSequenceFactory));

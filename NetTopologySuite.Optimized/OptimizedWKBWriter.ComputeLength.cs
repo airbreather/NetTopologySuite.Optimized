@@ -1,6 +1,4 @@
-﻿using System;
-
-using GeoAPI.Geometries;
+﻿using GeoAPI.Geometries;
 
 namespace NetTopologySuite.Optimized
 {
@@ -8,84 +6,79 @@ namespace NetTopologySuite.Optimized
     {
         public static int ComputeLength(IGeometry geometry)
         {
-            int length = 0;
-            AddLength(geometry, ref length);
-            return length;
-        }
-
-        private static void AddLength(IGeometry geometry, ref int length)
-        {
             // 1 byte for the byte order, 4 bytes for the packed type.
-            length += 5;
+            const int FixedLength = 5;
 
             switch (geometry.OgcGeometryType)
             {
+                case OgcGeometryType.Point:
+                    return FixedLength + ComputeLength((IPoint)geometry);
+
                 case OgcGeometryType.LineString:
-                    AddLength((ILineString)geometry, ref length);
-                    break;
+                    return FixedLength + ComputeLength((ILineString)geometry);
 
                 case OgcGeometryType.Polygon:
-                    AddLength((IPolygon)geometry, ref length);
-                    break;
+                    return FixedLength + ComputeLength((IPolygon)geometry);
 
-                case OgcGeometryType.Point:
-                    AddLength((IPoint)geometry, ref length);
-                    break;
-
-                case OgcGeometryType.GeometryCollection:
-                case OgcGeometryType.MultiPolygon:
-                case OgcGeometryType.MultiLineString:
                 case OgcGeometryType.MultiPoint:
-                    AddLength((IGeometryCollection)geometry, ref length);
-                    break;
+                case OgcGeometryType.MultiLineString:
+                case OgcGeometryType.MultiPolygon:
+                case OgcGeometryType.GeometryCollection:
+                    return FixedLength + ComputeLength((IGeometryCollection)geometry);
 
                 default:
-                    throw new NotSupportedException("Unsupported geometry type: " + geometry.OgcGeometryType);
+                    ThrowNotSupportedExceptionForBadGeometryType();
+                    return 0;
             }
         }
 
-        private static void AddLength(ILineString lineString, ref int length)
+        private static int ComputeLength(ILineString lineString)
         {
             // Int32 numPoints
-            length += 4;
+            const int FixedLength = 4;
 
-            AddLength(lineString.CoordinateSequence, ref length);
+            return FixedLength + ComputeLength(lineString.CoordinateSequence);
         }
 
-        private static void AddLength(IPolygon polygon, ref int length)
+        private static int ComputeLength(IPolygon polygon)
         {
             // Int32 numRings
-            length += 4;
+            const int FixedLength = 4;
 
-            AddLength(polygon.Shell, ref length);
+            int length = FixedLength + ComputeLength(polygon.Shell);
             foreach (var hole in polygon.Holes)
             {
-                AddLength(hole, ref length);
+                length += ComputeLength(hole);
             }
+
+            return length;
         }
 
-        private static void AddLength(IPoint point, ref int length) =>
-            AddLength(point.CoordinateSequence, ref length);
+        private static int ComputeLength(IPoint point) =>
+            ComputeLength(point.CoordinateSequence);
 
-        private static void AddLength(IGeometryCollection geometryCollection, ref int length)
+        private static int ComputeLength(IGeometryCollection geometryCollection)
         {
             // Int32 numGeoms
-            length += 4;
+            const int FixedLength = 4;
 
+            int length = FixedLength;
             foreach (var geom in geometryCollection.Geometries)
             {
-                AddLength(geom, ref length);
+                length += ComputeLength(geom);
             }
+
+            return length;
         }
 
-        private static void AddLength(ICoordinateSequence seq, ref int length)
+        private static int ComputeLength(ICoordinateSequence seq)
         {
             if ((seq.Dimension != 2) | (seq.Ordinates != Ordinates.XY))
             {
-                throw new NotSupportedException("Only XY geometries are supported.");
+                ThrowNotSupportedExceptionForBadDimension();
             }
 
-            length += seq.Count * 16;
+            return seq.Count * 16;
         }
     }
 }

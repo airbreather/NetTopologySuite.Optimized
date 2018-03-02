@@ -1,70 +1,104 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 using GeoAPI.Geometries;
+
+using NetTopologySuite.Geometries.Implementation;
 
 namespace NetTopologySuite.Optimized
 {
     public sealed class SOACoordinateSequence : ICoordinateSequence
     {
-        public readonly double[] Xs;
-        public readonly double[] Ys;
+        private readonly double[] xs;
+        private readonly double[] ys;
 
         public SOACoordinateSequence(int length)
         {
-            this.Xs = length == 0 ? Array.Empty<double>() : new double[length];
-            this.Ys = length == 0 ? Array.Empty<double>() : new double[length];
+            this.xs = length == 0 ? Array.Empty<double>() : new double[length];
+            this.ys = length == 0 ? Array.Empty<double>() : new double[length];
         }
 
         public SOACoordinateSequence(ICoordinateSequence seq)
         {
-            if (seq is SOACoordinateSequence soaSeq)
+            switch (seq)
             {
-                this.Xs = CloneVals(soaSeq.Xs);
-                this.Ys = CloneVals(soaSeq.Ys);
-                return;
-            }
+                case SOACoordinateSequence soaSeq:
+                    this.xs = CloneVals(soaSeq.xs);
+                    this.ys = CloneVals(soaSeq.ys);
+                    break;
 
-            this.Xs = new double[seq.Count];
-            this.Ys = new double[this.Xs.Length];
-            for (int i = 0; i < this.Xs.Length; i++)
-            {
-                this.Xs[i] = seq.GetX(i);
-                this.Ys[i] = seq.GetY(i);
+                case PackedDoubleCoordinateSequence aosSeq:
+                    int dim = aosSeq.Dimension;
+                    double[] coords = aosSeq.GetRawCoordinates();
+                    this.xs = new double[aosSeq.Count];
+                    this.ys = new double[aosSeq.Count];
+                    for (int i = 0, j = 0; i < coords.Length; i += dim, j++)
+                    {
+                        this.xs[j] = coords[i + 0];
+                        this.ys[j] = coords[i + 1];
+                    }
+
+                    break;
+
+                default:
+                    this.xs = new double[seq.Count];
+                    this.ys = new double[this.xs.Length];
+                    for (int i = 0; i < this.xs.Length; i++)
+                    {
+                        this.xs[i] = seq.GetX(i);
+                        this.ys[i] = seq.GetY(i);
+                    }
+
+                    break;
             }
         }
 
-        public SOACoordinateSequence(Coordinate[] coords)
+        public SOACoordinateSequence(ReadOnlySpan<Coordinate> coords)
         {
-            this.Xs = new double[coords.Length];
-            this.Ys = new double[coords.Length];
+            this.xs = new double[coords.Length];
+            this.ys = new double[coords.Length];
             for (int i = 0; i < coords.Length; i++)
             {
                 Coordinate coord = coords[i];
-                this.Xs[i] = coord.X;
-                this.Ys[i] = coord.Y;
+                this.xs[i] = coord.X;
+                this.ys[i] = coord.Y;
             }
         }
 
         private SOACoordinateSequence(double[] xs, double[] ys)
         {
-            this.Xs = xs;
-            this.Ys = ys;
+            this.xs = xs;
+            this.ys = ys;
         }
 
-        public int Count => this.Xs.Length;
+        public int Count => this.xs.Length;
+
+        public Span<double> Xs => this.xs;
+        public Span<double> Ys => this.ys;
 
         int ICoordinateSequence.Dimension => 2;
         Ordinates ICoordinateSequence.Ordinates => Ordinates.XY;
 
         object ICloneable.Clone() => this.Copy();
         ICoordinateSequence ICoordinateSequence.Copy() => this.Copy();
-        public SOACoordinateSequence Copy() => new SOACoordinateSequence(CloneVals(this.Xs), CloneVals(this.Ys));
+        public SOACoordinateSequence Copy() => new SOACoordinateSequence(CloneVals(this.xs), CloneVals(this.ys));
+
+        public void CopyTo(Span<double> outXs, Span<double> outYs)
+        {
+            if ((outXs.Length < this.xs.Length) | (outYs.Length < this.ys.Length))
+            {
+                ThrowArgumentExceptionForBadLength();
+            }
+
+            this.xs.AsReadOnlySpan().CopyTo(outXs.Slice(0, this.xs.Length));
+            this.ys.AsReadOnlySpan().CopyTo(outYs.Slice(0, this.ys.Length));
+        }
 
         public Envelope ExpandEnvelope(Envelope env)
         {
-            for (int i = 0; i < this.Xs.Length; i++)
+            for (int i = 0; i < this.xs.Length; i++)
             {
-                env.ExpandToInclude(this.Xs[i], this.Ys[i]);
+                env.ExpandToInclude(this.xs[i], this.ys[i]);
             }
 
             return env;
@@ -81,8 +115,8 @@ namespace NetTopologySuite.Optimized
 
         public void GetCoordinate(int index, Coordinate coord)
         {
-            coord.X = this.Xs[index];
-            coord.Y = this.Ys[index];
+            coord.X = this.xs[index];
+            coord.Y = this.ys[index];
         }
 
         public double GetOrdinate(int index, Ordinate ordinate)
@@ -90,24 +124,25 @@ namespace NetTopologySuite.Optimized
             switch (ordinate)
             {
                 case Ordinate.X:
-                    return this.Xs[index];
+                    return this.xs[index];
 
                 case Ordinate.Y:
-                    return this.Ys[index];
+                    return this.ys[index];
             }
 
-            throw new ArgumentOutOfRangeException(nameof(ordinate), ordinate, "Must be X or Y");
+            ThrowArgumentOutOfRangeExceptionForBadOrdinate();
+            return 0;
         }
 
-        public double GetX(int index) => this.Xs[index];
-        public double GetY(int index) => this.Ys[index];
+        public double GetX(int index) => this.xs[index];
+        public double GetY(int index) => this.ys[index];
 
         ICoordinateSequence ICoordinateSequence.Reversed() => this.Reversed();
         public SOACoordinateSequence Reversed()
         {
             SOACoordinateSequence cloned = this.Copy();
-            Array.Reverse(cloned.Xs);
-            Array.Reverse(cloned.Ys);
+            cloned.xs.AsSpan().Reverse();
+            cloned.ys.AsSpan().Reverse();
             return cloned;
         }
 
@@ -116,39 +151,35 @@ namespace NetTopologySuite.Optimized
             switch (ordinate)
             {
                 case Ordinate.X:
-                    this.Xs[index] = value;
+                    this.xs[index] = value;
                     return;
 
                 case Ordinate.Y:
-                    this.Ys[index] = value;
+                    this.ys[index] = value;
                     return;
             }
 
-            throw new ArgumentOutOfRangeException(nameof(ordinate), ordinate, "Must be X or Y");
+            ThrowArgumentOutOfRangeExceptionForBadOrdinate();
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentOutOfRangeExceptionForBadOrdinate() => throw new ArgumentOutOfRangeException("ordinate", "Must be X or Y");
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentExceptionForBadLength() => throw new ArgumentException("Not enough room");
 
         public Coordinate[] ToCoordinateArray()
         {
-            var result = new Coordinate[this.Xs.Length];
+            var result = new Coordinate[this.xs.Length];
             for (int i = 0; i < result.Length; i++)
             {
-                result[i] = new Coordinate(this.Xs[i], this.Ys[i]);
+                result[i] = new Coordinate(this.xs[i], this.ys[i]);
             }
 
             return result;
         }
 
-        private static unsafe double[] CloneVals(double[] val)
-        {
-            double[] result = new double[val.Length];
-            fixed (void* fromPtr = val)
-            fixed (void* toPtr = result)
-            {
-                Buffer.MemoryCopy(fromPtr, toPtr, val.Length * 8, val.Length * 8);
-            }
-
-            return result;
-        }
+        private static double[] CloneVals(ReadOnlySpan<double> val) => val.ToArray();
     }
 
     public sealed class SOACoordinateSequenceFactory : ICoordinateSequenceFactory
@@ -165,7 +196,7 @@ namespace NetTopologySuite.Optimized
         {
             if (ordinates != Ordinates.XY)
             {
-                throw new ArgumentException("Must be XY", nameof(ordinates));
+                ThrowArgumentExceptionForBadOrdinates();
             }
 
             return new SOACoordinateSequence(size);
@@ -175,10 +206,16 @@ namespace NetTopologySuite.Optimized
         {
             if (dimension != 2)
             {
-                throw new ArgumentException("Must be 2", nameof(dimension));
+                ThrowArgumentExceptionForBadDimension();
             }
 
             return new SOACoordinateSequence(size);
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentExceptionForBadOrdinates() => throw new ArgumentException("Must be XY", "ordinates");
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentExceptionForBadDimension() => throw new ArgumentException("Must be 2", "dimension");
     }
 }

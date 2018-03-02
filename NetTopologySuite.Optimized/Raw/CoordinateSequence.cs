@@ -24,7 +24,7 @@ namespace NetTopologySuite.Optimized.Raw
         {
             var coords = this.Coordinates;
             var seq = factory.Create(coords.Length, 2);
-            for (int i = 0; i < coords.Length; ++i)
+            for (int i = 0; i < coords.Length; i++)
             {
                 seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.X, coords[i].X);
                 seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.Y, coords[i].Y);

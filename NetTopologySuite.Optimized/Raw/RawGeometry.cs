@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NetTopologySuite.Optimized.Raw
 {
@@ -10,31 +12,15 @@ namespace NetTopologySuite.Optimized.Raw
         {
             if (data.Length < 5)
             {
-                throw new ArgumentException("No valid WKB is less than 5 bytes long.", nameof(data));
+                ThrowArgumentExceptionForTooShortWKB();
             }
 
             this.Data = data;
 
-            switch (this.ByteOrder)
+            if ((BitConverter.IsLittleEndian && this.ByteOrder != ByteOrder.LittleEndian) ||
+                (!BitConverter.IsLittleEndian && this.ByteOrder != ByteOrder.BigEndian))
             {
-                case ByteOrder.LittleEndian:
-                    if (BitConverter.IsLittleEndian)
-                    {
-                        break;
-                    }
-
-                    goto default;
-
-                case ByteOrder.BigEndian:
-                    if (!BitConverter.IsLittleEndian)
-                    {
-                        break;
-                    }
-
-                    goto default;
-
-                default:
-                    throw new NotSupportedException("Machine endianness needs to match WKB endianness for now... sorry.");
+                ThrowNotSupportedExceptionForEndianness();
             }
         }
 
@@ -44,11 +30,11 @@ namespace NetTopologySuite.Optimized.Raw
 
         public static GeometryType GetGeometryType(ReadOnlySpan<byte> wkb)
         {
-            uint packedTyp = wkb.Slice(1).NonPortableCast<byte, uint>()[0];
+            uint packedTyp = Unsafe.ReadUnaligned<uint>(ref MemoryMarshal.GetReference(wkb.Slice(1)));
             if ((packedTyp & 0xE0000000) != 0)
             {
                 Console.WriteLine(packedTyp);
-                throw new NotSupportedException("Only the XY coordinate system is supported at this time, and no SRIDs.");
+                ThrowNotSupportedExceptionForBadDimension();
             }
 
             int ordinate = Math.DivRem(unchecked((int)packedTyp) & 0xFFFF, 1000, out int type);
@@ -57,7 +43,8 @@ namespace NetTopologySuite.Optimized.Raw
                 case 1:
                 case 2:
                 case 3:
-                    throw new NotSupportedException("Only the XY coordinate system is supported at this time, and no SRIDs.");
+                    ThrowNotSupportedExceptionForBadDimension();
+                    break;
             }
 
             return (GeometryType)type;
@@ -76,13 +63,12 @@ namespace NetTopologySuite.Optimized.Raw
                 case GeometryType.Polygon:
                     int ringCnt = wkb.Slice(5).NonPortableCast<byte, int>()[0];
                     var rem1 = wkb.Slice(9);
-                    for (int i = 0; i < ringCnt; ++i)
+                    for (int i = 0; i < ringCnt; i++)
                     {
                         int ptCnt = rem1.NonPortableCast<byte, int>()[0];
                         rem1 = rem1.Slice(ptCnt * 16 + 4);
                     }
 
-                    Console.WriteLine(rem1.Length);
                     return wkb.Length - rem1.Length;
 
                 case GeometryType.MultiPoint:
@@ -91,7 +77,7 @@ namespace NetTopologySuite.Optimized.Raw
                 case GeometryType.GeometryCollection:
                     int cnt = wkb.Slice(5).NonPortableCast<byte, int>()[0];
                     var rem2 = wkb.Slice(9);
-                    for (int i = 0; i < cnt; ++i)
+                    for (int i = 0; i < cnt; i++)
                     {
                         rem2 = rem2.Slice(GetLength(rem2));
                     }
@@ -99,8 +85,21 @@ namespace NetTopologySuite.Optimized.Raw
                     return wkb.Length - rem2.Length;
 
                 default:
-                    throw new NotSupportedException("Unrecognized WKB geometry type.");
+                    ThrowNotSupportedExceptionForBadGeometryType();
+                    return 0;
             }
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentExceptionForTooShortWKB() => throw new ArgumentException("No valid WKB is less than 5 bytes long.", "data");
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowNotSupportedExceptionForEndianness() => throw new NotSupportedException("Machine endianness needs to match WKB endianness for now... sorry.");
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowNotSupportedExceptionForBadDimension() => throw new NotSupportedException("Only the XY coordinate system is supported at this time, and no SRIDs.");
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowNotSupportedExceptionForBadGeometryType() => throw new NotSupportedException("Unsupported geometry type");
     }
 }

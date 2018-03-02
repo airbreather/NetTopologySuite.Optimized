@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 using GeoAPI;
 using GeoAPI.Geometries;
@@ -26,24 +27,20 @@ namespace NetTopologySuite.Optimized
 
         public CoordinatePackingMode CoordinatePackingMode { get; set; }
 
-        public IGeometry Read(byte[] wkb)
-        {
-            int pos = 0;
-            return this.Read(wkb, ref pos);
-        }
+        public IGeometry Read(ReadOnlySpan<byte> bytes) => this.Read(ref bytes);
 
-        public IGeometry Read(byte[] arr, ref int pos)
+        private IGeometry Read(ref ReadOnlySpan<byte> bytes)
         {
-            if (Read<ByteOrder>(arr, ref pos) != ByteOrder.LittleEndian)
+            if (Read<ByteOrder>(ref bytes) != ByteOrder.LittleEndian)
             {
-                throw new NotSupportedException("Big-endian WKB not supported... yet.");
+                ThrowNotSupportedExceptionForBigEndian();
             }
 
-            uint packedTyp = Read<uint>(arr, ref pos);
+            uint packedTyp = Read<uint>(ref bytes);
 
             if ((packedTyp & 0xE0000000) != 0)
             {
-                throw new NotSupportedException("Only the XY coordinate system is supported at this time, and no SRIDs.");
+                ThrowNotSupportedExceptionForBadDimension();
             }
 
             int ordinate = Math.DivRem((int)packedTyp & 0xffff, 1000, out int type);
@@ -52,135 +49,142 @@ namespace NetTopologySuite.Optimized
                 case 1:
                 case 2:
                 case 3:
-                    throw new NotSupportedException("Only the XY coordinate system is supported at this time, and no SRIDs.");
+                    ThrowNotSupportedExceptionForBadDimension();
+                    break;
             }
 
             switch ((WKBGeometryTypes)type)
             {
                 case WKBGeometryTypes.WKBPoint:
-                    return this.ReadPoint(arr, ref pos);
+                    return this.ReadPoint(ref bytes);
 
                 case WKBGeometryTypes.WKBLineString:
-                    return this.ReadLineString(arr, ref pos);
+                    return this.ReadLineString(ref bytes);
 
                 case WKBGeometryTypes.WKBPolygon:
-                    return this.ReadPolygon(arr, ref pos);
+                    return this.ReadPolygon(ref bytes);
 
                 case WKBGeometryTypes.WKBMultiPoint:
-                    return this.ReadMultiPoint(arr, ref pos);
+                    return this.ReadMultiPoint(ref bytes);
 
                 case WKBGeometryTypes.WKBMultiLineString:
-                    return this.ReadMultiLineString(arr, ref pos);
+                    return this.ReadMultiLineString(ref bytes);
 
                 case WKBGeometryTypes.WKBMultiPolygon:
-                    return this.ReadMultiPolygon(arr, ref pos);
+                    return this.ReadMultiPolygon(ref bytes);
 
                 case WKBGeometryTypes.WKBGeometryCollection:
-                    return this.ReadGeometryCollection(arr, ref pos);
+                    return this.ReadGeometryCollection(ref bytes);
 
                 default:
-                    throw new NotSupportedException("Unrecognized geometry type: " + (WKBGeometryTypes)type);
+                    ThrowNotSupportedExceptionForBadGeometryType();
+                    return null;
             }
         }
 
-        private ILinearRing ReadLinearRing(byte[] arr, ref int pos) =>
-            this.factory.CreateLinearRing(this.ReadCoordinateSequence(arr, ref pos));
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowNotSupportedExceptionForBigEndian() => throw new NotSupportedException("Big-endian WKB not supported... yet.");
 
-        private IPoint ReadPoint(byte[] arr, ref int pos) =>
-            this.factory.CreatePoint(this.ReadCoordinateSequence(arr, ref pos, 1));
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowNotSupportedExceptionForBadDimension() => throw new NotSupportedException("Only the XY coordinate system is supported at this time, and no SRIDs.");
 
-        private ILineString ReadLineString(byte[] arr, ref int pos) =>
-            this.factory.CreateLineString(this.ReadCoordinateSequence(arr, ref pos));
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowNotSupportedExceptionForBadGeometryType() => throw new NotSupportedException("Unsupported geometry type");
 
-        private IPolygon ReadPolygon(byte[] arr, ref int pos)
+        private ILinearRing ReadLinearRing(ref ReadOnlySpan<byte> bytes) =>
+            this.factory.CreateLinearRing(this.ReadCoordinateSequence(ref bytes));
+
+        private IPoint ReadPoint(ref ReadOnlySpan<byte> bytes) =>
+            this.factory.CreatePoint(this.ReadCoordinateSequence(ref bytes, 1));
+
+        private ILineString ReadLineString(ref ReadOnlySpan<byte> bytes) =>
+            this.factory.CreateLineString(this.ReadCoordinateSequence(ref bytes));
+
+        private IPolygon ReadPolygon(ref ReadOnlySpan<byte> bytes)
         {
-            int numRings = Read<int>(arr, ref pos);
+            int numRings = Read<int>(ref bytes);
             if (numRings == 0)
             {
                 return this.factory.CreatePolygon(null, null);
             }
 
-            ILinearRing shell = this.ReadLinearRing(arr, ref pos);
+            ILinearRing shell = this.ReadLinearRing(ref bytes);
             if (numRings == 1)
             {
                 return this.factory.CreatePolygon(shell);
             }
 
             ILinearRing[] holes = new ILinearRing[numRings - 1];
-            for (int i = 0; i < holes.Length; ++i)
+            for (int i = 0; i < holes.Length; i++)
             {
-                holes[i] = this.ReadLinearRing(arr, ref pos);
+                holes[i] = this.ReadLinearRing(ref bytes);
             }
 
             return this.factory.CreatePolygon(shell, holes);
         }
 
-        private IMultiPoint ReadMultiPoint(byte[] arr, ref int pos) =>
-            this.factory.CreateMultiPoint(this.ReadTypedGeometries<IPoint>(arr, ref pos));
+        private IMultiPoint ReadMultiPoint(ref ReadOnlySpan<byte> bytes) =>
+            this.factory.CreateMultiPoint(this.ReadTypedGeometries<IPoint>(ref bytes));
 
-        private IMultiLineString ReadMultiLineString(byte[] arr, ref int pos) =>
-            this.factory.CreateMultiLineString(this.ReadTypedGeometries<ILineString>(arr, ref pos));
+        private IMultiLineString ReadMultiLineString(ref ReadOnlySpan<byte> bytes) =>
+            this.factory.CreateMultiLineString(this.ReadTypedGeometries<ILineString>(ref bytes));
 
-        private IMultiPolygon ReadMultiPolygon(byte[] arr, ref int pos) =>
-            this.factory.CreateMultiPolygon(this.ReadTypedGeometries<IPolygon>(arr, ref pos));
+        private IMultiPolygon ReadMultiPolygon(ref ReadOnlySpan<byte> bytes) =>
+            this.factory.CreateMultiPolygon(this.ReadTypedGeometries<IPolygon>(ref bytes));
 
-        private IGeometryCollection ReadGeometryCollection(byte[] arr, ref int pos) =>
-            this.factory.CreateGeometryCollection(this.ReadTypedGeometries<IGeometry>(arr, ref pos));
+        private IGeometryCollection ReadGeometryCollection(ref ReadOnlySpan<byte> bytes) =>
+            this.factory.CreateGeometryCollection(this.ReadTypedGeometries<IGeometry>(ref bytes));
 
-        private TGeometry[] ReadTypedGeometries<TGeometry>(byte[] arr, ref int pos)
+        private TGeometry[] ReadTypedGeometries<TGeometry>(ref ReadOnlySpan<byte> bytes)
             where TGeometry : IGeometry
         {
-            TGeometry[] geometries = new TGeometry[Read<int>(arr, ref pos)];
-            for (int i = 0; i < geometries.Length; ++i)
+            TGeometry[] geometries = new TGeometry[Read<int>(ref bytes)];
+            for (int i = 0; i < geometries.Length; i++)
             {
-                geometries[i] = (TGeometry)this.Read(arr, ref pos);
+                geometries[i] = (TGeometry)this.Read(ref bytes);
             }
 
             return geometries;
         }
 
-        private ICoordinateSequence ReadCoordinateSequence(byte[] arr, ref int pos, int cnt = 0)
+        private ICoordinateSequence ReadCoordinateSequence(ref ReadOnlySpan<byte> bytes, int cnt = 0)
         {
             if (cnt == 0)
             {
-                cnt = Read<int>(arr, ref pos);
+                cnt = Read<int>(ref bytes);
             }
 
             return this.CoordinatePackingMode == CoordinatePackingMode.AOS
-                ? ReadAOSCoordinateSequence(arr, ref pos, cnt)
-                : ReadSOACoordinateSequence(arr, ref pos, cnt);
+                ? ReadAOSCoordinateSequence(ref bytes, cnt)
+                : ReadSOACoordinateSequence(ref bytes, cnt);
         }
 
-        private static ICoordinateSequence ReadSOACoordinateSequence(byte[] arr, ref int pos, int cnt)
+        private static ICoordinateSequence ReadSOACoordinateSequence(ref ReadOnlySpan<byte> bytes, int cnt)
         {
             SOACoordinateSequence seq = new SOACoordinateSequence(cnt);
-            for (int i = 0; i < cnt; ++i)
+            for (int i = 0; i < cnt; i++)
             {
-                seq.Xs[i] = Read<double>(arr, ref pos);
-                seq.Ys[i] = Read<double>(arr, ref pos);
+                seq.Xs[i] = Read<double>(ref bytes);
+                seq.Ys[i] = Read<double>(ref bytes);
             }
 
             return seq;
         }
 
-        private static unsafe ICoordinateSequence ReadAOSCoordinateSequence(byte[] arr, ref int pos, int cnt)
+        private static unsafe ICoordinateSequence ReadAOSCoordinateSequence(ref ReadOnlySpan<byte> bytes, int cnt)
         {
-            PackedDoubleCoordinateSequence seq = new PackedDoubleCoordinateSequence(cnt, 2);
-            int byteCnt = cnt * 16;
-            fixed (void* toPtr = seq.GetRawCoordinates())
-            fixed (void* fromPtr = &arr[pos])
-            {
-                Buffer.MemoryCopy(fromPtr, toPtr, byteCnt, byteCnt);
-            }
-
-            pos += byteCnt;
-            return seq;
+            double[] vals = new double[cnt + cnt];
+            ReadOnlySpan<double> src = bytes.NonPortableCast<byte, double>().Slice(0, vals.Length);
+            bytes = bytes.Slice(src.AsBytes().Length);
+            src.CopyTo(vals);
+            return new PackedDoubleCoordinateSequence(vals, 2);
         }
 
-        private static T Read<T>(byte[] arr, ref int pos)
+        private static T Read<T>(ref ReadOnlySpan<byte> span)
+            where T : struct
         {
-            T result = Unsafe.ReadUnaligned<T>(ref arr[pos]);
-            pos += Unsafe.SizeOf<T>();
+            T result = Unsafe.ReadUnaligned<T>(ref MemoryMarshal.GetReference(span));
+            span = span.Slice(Unsafe.SizeOf<T>());
             return result;
         }
     }
