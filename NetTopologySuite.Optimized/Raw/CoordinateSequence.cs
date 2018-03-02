@@ -14,7 +14,7 @@ namespace NetTopologySuite.Optimized.Raw
             int pointCountByLength = Math.DivRem(pointData.Length - 4, 16, out int remainder);
             if (remainder != 0 || pointCountByLength != this.PointCount)
             {
-                throw new ArgumentException("Input data length is inconsistent with claimed point count.", nameof(pointData));
+                ThrowArgumentExceptionForInconsistentLengths();
             }
         }
 
@@ -40,5 +40,8 @@ namespace NetTopologySuite.Optimized.Raw
         public bool EqualsExact(CoordinateSequence other) => this.PointData.SequenceEqual(other.PointData);
 
         public override string ToString() => $"[PointCount = {this.PointCount}]";
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentExceptionForInconsistentLengths() => throw new ArgumentException("Input data length is inconsistent with claimed point count.", "pointData");
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace NetTopologySuite.Optimized.Raw
 {
@@ -8,13 +9,9 @@ namespace NetTopologySuite.Optimized.Raw
 
         public LineString(RawGeometry rawGeometry)
         {
-            switch (rawGeometry.GeometryType)
+            if (rawGeometry.GeometryType != GeometryType.LineString)
             {
-                case GeometryType.LineString:
-                    break;
-
-                default:
-                    throw new ArgumentException("GeometryType must be LineString.", nameof(rawGeometry));
+                ThrowArgumentExceptionForNonLineString();
             }
 
             this.RawGeometry = rawGeometry;
@@ -34,5 +31,8 @@ namespace NetTopologySuite.Optimized.Raw
         public bool EqualsExact(LineString other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
 
         public override string ToString() => $"[Coordinates = {this.Coordinates.ToString()}]";
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentExceptionForNonLineString() => throw new ArgumentException("GeometryType must be LineString.", "rawGeometry");
     }
 }

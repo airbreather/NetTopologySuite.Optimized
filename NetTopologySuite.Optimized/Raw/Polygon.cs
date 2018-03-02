@@ -85,10 +85,13 @@ namespace NetTopologySuite.Optimized.Raw
 
         public override string ToString() => $"[RingCount = {this.RingCount}]";
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowArgumentExceptionForNonPolygon() => throw new ArgumentException("GeometryType must be Polygon.", "rawGeometry");
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowArgumentExceptionForNegativeRingCount() => throw new ArgumentException("Ring count cannot be negative", "rawGeometry");
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowArgumentExceptionForExcessRemainder() => throw new ArgumentException("Data is janky...", "rawGeometry");
 
         [MethodImpl(MethodImplOptions.NoInlining)]

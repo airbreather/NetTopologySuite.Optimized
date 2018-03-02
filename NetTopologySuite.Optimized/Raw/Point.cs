@@ -10,18 +10,14 @@ namespace NetTopologySuite.Optimized.Raw
 
         public Point(RawGeometry rawGeometry)
         {
-            switch (rawGeometry.GeometryType)
+            if (rawGeometry.GeometryType != GeometryType.Point)
             {
-                case GeometryType.Point:
-                    break;
-
-                default:
-                    throw new ArgumentException("GeometryType must be Point.", nameof(rawGeometry));
+                ThrowArgumentExceptionForNonPoint();
             }
 
             if (rawGeometry.Data.Length != 21)
             {
-                throw new ArgumentException("Point geometries are always exactly 21 bytes.", nameof(rawGeometry));
+                ThrowArgumentExceptionForBadLength();
             }
 
             this.RawGeometry = rawGeometry;
@@ -38,5 +34,11 @@ namespace NetTopologySuite.Optimized.Raw
         public bool EqualsExact(Point other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
 
         public override string ToString() => $"[X: {this.X}, Y: {this.Y}]";
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentExceptionForNonPoint() => throw new ArgumentException("GeometryType must be Point.", "rawGeometry");
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentExceptionForBadLength() => throw new ArgumentException("Point geometries are always exactly 21 bytes.", "rawGeometry");
     }
 }
