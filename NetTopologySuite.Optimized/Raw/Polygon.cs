@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NetTopologySuite.Optimized.Raw
 {
@@ -8,30 +10,26 @@ namespace NetTopologySuite.Optimized.Raw
 
         public Polygon(RawGeometry rawGeometry)
         {
-            switch (rawGeometry.GeometryType)
+            if (rawGeometry.GeometryType != GeometryType.Polygon)
             {
-                case GeometryType.Polygon:
-                    break;
-
-                default:
-                    throw new ArgumentException("GeometryType must be Polygon.", nameof(rawGeometry));
+                ThrowArgumentExceptionForNonPolygon();
             }
 
             this.RawGeometry = rawGeometry;
             int ringCount = this.RingCount;
             if (ringCount < 0)
             {
-                throw new ArgumentException("Ring count cannot be negative", nameof(rawGeometry));
+                ThrowArgumentExceptionForNegativeRingCount();
             }
 
             var rem = rawGeometry.Data.Slice(9);
             for (int i = 0; i < ringCount && rem.Length >= 4; i++)
             {
-                int len = 4 + rem.NonPortableCast<byte, int>()[0] * 16;
+                int len = 4 + Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16;
                 var cs = new CoordinateSequence(rem.Slice(0, len));
-                if (cs.Coordinates[0] != cs.Coordinates[cs.Coordinates.Length - 1])
+                if (cs.GetCoordinate(0) != cs.GetCoordinate(cs.PointCount - 1))
                 {
-                    throw new ArgumentException($"Ring {i} is not closed.", nameof(rawGeometry));
+                    ThrowArgumentExceptionForUnclosedRing(i);
                 }
 
                 rem = rem.Slice(len);
@@ -39,21 +37,21 @@ namespace NetTopologySuite.Optimized.Raw
 
             if (rem.Length != 0)
             {
-                throw new ArgumentException("Data is janky...", nameof(rawGeometry));
+                ThrowArgumentExceptionForExcessRemainder();
             }
         }
 
-        public int RingCount => this.RawGeometry.Data.Slice(5).NonPortableCast<byte, int>()[0];
+        public int RingCount => Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(this.RawGeometry.Data.Slice(5)));
 
         public CoordinateSequence GetRing(int ringIndex)
         {
             var rem = this.RawGeometry.Data.Slice(9);
             for (int i = 0; i < ringIndex; i++)
             {
-                rem = rem.Slice(rem.NonPortableCast<byte, int>()[0] * 16 + 4);
+                rem = rem.Slice(Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16 + 4);
             }
 
-            return new CoordinateSequence(rem.Slice(0, rem.NonPortableCast<byte, int>()[0]));
+            return new CoordinateSequence(rem.Slice(0, Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem))));
         }
 
         public GeoAPI.Geometries.IPolygon ToGeoAPI(GeoAPI.Geometries.IGeometryFactory factory)
@@ -65,7 +63,7 @@ namespace NetTopologySuite.Optimized.Raw
             }
 
             var rem = this.RawGeometry.Data.Slice(9);
-            var ringLength = rem.NonPortableCast<byte, int>()[0] * 16 + 4;
+            var ringLength = Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16 + 4;
             var shell = new CoordinateSequence(rem.Slice(0, ringLength));
             rem = rem.Slice(ringLength);
 
@@ -75,7 +73,7 @@ namespace NetTopologySuite.Optimized.Raw
 
             for (int i = 0; i < holes.Length; i++)
             {
-                ringLength = rem.NonPortableCast<byte, int>()[0] * 16 + 4;
+                ringLength = Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16 + 4;
                 holes[i] = factory.CreateLinearRing(new CoordinateSequence(rem.Slice(0, ringLength)).ToGeoAPI(factory.CoordinateSequenceFactory));
                 rem = rem.Slice(ringLength);
             }
@@ -86,5 +84,14 @@ namespace NetTopologySuite.Optimized.Raw
         public bool EqualsExact(Polygon other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
 
         public override string ToString() => $"[RingCount = {this.RingCount}]";
+
+        private static void ThrowArgumentExceptionForNonPolygon() => throw new ArgumentException("GeometryType must be Polygon.", "rawGeometry");
+
+        private static void ThrowArgumentExceptionForNegativeRingCount() => throw new ArgumentException("Ring count cannot be negative", "rawGeometry");
+
+        private static void ThrowArgumentExceptionForExcessRemainder() => throw new ArgumentException("Data is janky...", "rawGeometry");
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentExceptionForUnclosedRing(int ringIndex) => throw new ArgumentException($"Ring {ringIndex} is not closed.", "rawGeometry");
     }
 }

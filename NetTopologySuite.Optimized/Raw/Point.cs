@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NetTopologySuite.Optimized.Raw
 {
@@ -25,11 +27,11 @@ namespace NetTopologySuite.Optimized.Raw
             this.RawGeometry = rawGeometry;
         }
 
-        public double X => this.RawGeometry.Data.Slice(5).NonPortableCast<byte, double>()[0];
+        public double X => Unsafe.ReadUnaligned<double>(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(this.RawGeometry.Data), new IntPtr(5)));
 
-        public double Y => this.RawGeometry.Data.Slice(13).NonPortableCast<byte, double>()[0];
+        public double Y => Unsafe.ReadUnaligned<double>(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(this.RawGeometry.Data), new IntPtr(13)));
 
-        public Coordinate CoordinateValue => this.RawGeometry.Data.Slice(5).NonPortableCast<byte, Coordinate>()[0];
+        public Coordinate CoordinateValue => Unsafe.ReadUnaligned<Coordinate>(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(this.RawGeometry.Data), new IntPtr(5)));
 
         public GeoAPI.Geometries.IPoint ToGeoAPI(GeoAPI.Geometries.IGeometryFactory factory) => factory.CreatePoint(this.CoordinateValue.ToGeoAPI());
 

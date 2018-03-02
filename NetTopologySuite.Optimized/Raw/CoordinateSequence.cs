@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NetTopologySuite.Optimized.Raw
 {
@@ -16,22 +18,24 @@ namespace NetTopologySuite.Optimized.Raw
             }
         }
 
-        public int PointCount => this.PointData.NonPortableCast<byte, int>()[0];
-
-        public ReadOnlySpan<Coordinate> Coordinates => this.PointData.Slice(4).NonPortableCast<byte, Coordinate>();
+        public int PointCount => Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(this.PointData));
 
         public GeoAPI.Geometries.ICoordinateSequence ToGeoAPI(GeoAPI.Geometries.ICoordinateSequenceFactory factory)
         {
-            var coords = this.Coordinates;
-            var seq = factory.Create(coords.Length, 2);
-            for (int i = 0; i < coords.Length; i++)
+            var pts = this.PointData.Slice(4);
+            var len = pts.Length / 16;
+            var seq = factory.Create(len, 2);
+            ref var ptsStart = ref MemoryMarshal.GetReference(pts);
+            for (int i = 0, j = 0; i < len; i++, j += 16)
             {
-                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.X, coords[i].X);
-                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.Y, coords[i].Y);
+                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.X, Unsafe.ReadUnaligned<double>(ref Unsafe.AddByteOffset(ref ptsStart, new IntPtr(j + 0))));
+                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.Y, Unsafe.ReadUnaligned<double>(ref Unsafe.AddByteOffset(ref ptsStart, new IntPtr(j + 8))));
             }
 
             return seq;
         }
+
+        public Coordinate GetCoordinate(int idx) => Unsafe.ReadUnaligned<Coordinate>(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(this.PointData), new IntPtr(idx * 16 + 4)));
 
         public bool EqualsExact(CoordinateSequence other) => this.PointData.SequenceEqual(other.PointData);
 

@@ -52,37 +52,39 @@ namespace NetTopologySuite.Optimized.Raw
 
         internal static int GetLength(ReadOnlySpan<byte> wkb)
         {
+            ref var wkbStart = ref MemoryMarshal.GetReference(wkb);
             switch (GetGeometryType(wkb))
             {
                 case GeometryType.Point:
                     return 21;
 
                 case GeometryType.LineString:
-                    return 9 + wkb.Slice(5).NonPortableCast<byte, int>()[0] * 16;
+                    return 9 + Unsafe.ReadUnaligned<int>(ref Unsafe.AddByteOffset(ref wkbStart, new IntPtr(5))) * 16;
 
                 case GeometryType.Polygon:
-                    int ringCnt = wkb.Slice(5).NonPortableCast<byte, int>()[0];
+                    int ringCnt = Unsafe.ReadUnaligned<int>(ref Unsafe.AddByteOffset(ref wkbStart, new IntPtr(5)));
+                    int off = 9;
                     var rem1 = wkb.Slice(9);
                     for (int i = 0; i < ringCnt; i++)
                     {
-                        int ptCnt = rem1.NonPortableCast<byte, int>()[0];
-                        rem1 = rem1.Slice(ptCnt * 16 + 4);
+                        int ptCnt = Unsafe.ReadUnaligned<int>(ref Unsafe.AddByteOffset(ref wkbStart, new IntPtr(off)));
+                        off += ptCnt * 16 + 4;
                     }
 
-                    return wkb.Length - rem1.Length;
+                    return off;
 
                 case GeometryType.MultiPoint:
                 case GeometryType.MultiLineString:
                 case GeometryType.MultiPolygon:
                 case GeometryType.GeometryCollection:
-                    int cnt = wkb.Slice(5).NonPortableCast<byte, int>()[0];
-                    var rem2 = wkb.Slice(9);
+                    int cnt = Unsafe.ReadUnaligned<int>(ref Unsafe.AddByteOffset(ref wkbStart, new IntPtr(5)));
+                    var off2 = 9;
                     for (int i = 0; i < cnt; i++)
                     {
-                        rem2 = rem2.Slice(GetLength(rem2));
+                        off2 += GetLength(wkb.Slice(off2));
                     }
 
-                    return wkb.Length - rem2.Length;
+                    return off2;
 
                 default:
                     ThrowNotSupportedExceptionForBadGeometryType();
