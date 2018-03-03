@@ -51,7 +51,9 @@ namespace NetTopologySuite.Optimized.Raw
                 rem = rem.Slice(Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16 + 4);
             }
 
-            return new CoordinateSequence(rem.Slice(0, Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem))));
+            CoordinateSequence result = default;
+            result.PointData = rem.Slice(0, Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16 + 4);
+            return result;
         }
 
         public GeoAPI.Geometries.IPolygon ToGeoAPI(GeoAPI.Geometries.IGeometryFactory factory)
@@ -64,7 +66,8 @@ namespace NetTopologySuite.Optimized.Raw
 
             var rem = this.RawGeometry.Data.Slice(9);
             var ringLength = Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16 + 4;
-            var shell = new CoordinateSequence(rem.Slice(0, ringLength));
+            CoordinateSequence shell = default;
+            shell.PointData = rem.Slice(0, ringLength);
             rem = rem.Slice(ringLength);
 
             var holes = ringCount == 1
@@ -74,7 +77,9 @@ namespace NetTopologySuite.Optimized.Raw
             for (int i = 0; i < holes.Length; i++)
             {
                 ringLength = Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16 + 4;
-                holes[i] = factory.CreateLinearRing(new CoordinateSequence(rem.Slice(0, ringLength)).ToGeoAPI(factory.CoordinateSequenceFactory));
+                CoordinateSequence ring = default;
+                ring.PointData = rem.Slice(0, ringLength);
+                holes[i] = factory.CreateLinearRing(ring.ToGeoAPI(factory.CoordinateSequenceFactory));
                 rem = rem.Slice(ringLength);
             }
 
@@ -96,5 +101,30 @@ namespace NetTopologySuite.Optimized.Raw
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowArgumentExceptionForUnclosedRing(int ringIndex) => throw new ArgumentException($"Ring {ringIndex} is not closed.", "rawGeometry");
+
+        public Enumerator GetEnumerator() => new Enumerator(this);
+
+        public ref struct Enumerator
+        {
+            private ReadOnlySpan<byte> rem;
+
+            private CoordinateSequence current;
+
+            internal Enumerator(Polygon poly) => this.rem = poly.RawGeometry.Data.Slice(9);
+
+            public CoordinateSequence Current => this.current;
+
+            public bool MoveNext()
+            {
+                if (this.rem.Length == 0)
+                {
+                    return false;
+                }
+
+                this.current.PointData = this.rem.Slice(0, Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(this.rem)) * 16 + 4);
+                this.rem = this.rem.Slice(this.current.PointData.Length);
+                return true;
+            }
+        }
     }
 }

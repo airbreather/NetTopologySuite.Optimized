@@ -18,7 +18,15 @@ namespace NetTopologySuite.Optimized.Raw
             new CoordinateSequence(this.RawGeometry.Data.Slice(5));
         }
 
-        public CoordinateSequence Coordinates => new CoordinateSequence(this.RawGeometry.Data.Slice(5));
+        public CoordinateSequence Coordinates
+        {
+            get
+            {
+                CoordinateSequence result = default;
+                result.PointData = this.RawGeometry.Data.Slice(5);
+                return result;
+            }
+        }
 
         public GeoAPI.Geometries.ILineString ToGeoAPI(GeoAPI.Geometries.IGeometryFactory factory, bool ring = false)
         {

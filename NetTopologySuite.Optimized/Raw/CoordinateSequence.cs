@@ -43,5 +43,34 @@ namespace NetTopologySuite.Optimized.Raw
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowArgumentExceptionForInconsistentLengths() => throw new ArgumentException("Input data length is inconsistent with claimed point count.", "pointData");
+
+        public Enumerator GetEnumerator() => new Enumerator(this);
+
+        public ref struct Enumerator
+        {
+            private ReadOnlySpan<byte> rem;
+
+            private Coordinate current;
+
+            internal Enumerator(CoordinateSequence seq)
+            {
+                this.rem = seq.PointData.Slice(4);
+                this.current = default;
+            }
+
+            public Coordinate Current => this.current;
+
+            public bool MoveNext()
+            {
+                if (this.rem.Length == 0)
+                {
+                    return false;
+                }
+
+                this.current = Unsafe.ReadUnaligned<Coordinate>(ref MemoryMarshal.GetReference(this.rem));
+                this.rem = this.rem.Slice(16);
+                return true;
+            }
+        }
     }
 }

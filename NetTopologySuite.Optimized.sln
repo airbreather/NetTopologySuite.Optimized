@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26020.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetTopologySuite.Optimized", "NetTopologySuite.Optimized\NetTopologySuite.Optimized.csproj", "{A9020EA0-C05E-4543-AFBE-38F59C3AFA6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetTopologySuite.Optimized", "NetTopologySuite.Optimized\NetTopologySuite.Optimized.csproj", "{A9020EA0-C05E-4543-AFBE-38F59C3AFA6D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetTopologySuite.Optimized.Tests", "NetTopologySuite.Optimized.Tests\NetTopologySuite.Optimized.Tests.csproj", "{C25AFB43-3818-482E-8749-D179C2E5B39B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetTopologySuite.Optimized.Tests", "NetTopologySuite.Optimized.Tests\NetTopologySuite.Optimized.Tests.csproj", "{C25AFB43-3818-482E-8749-D179C2E5B39B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetTopologySuite.Optimized.Bench", "NetTopologySuite.Optimized.Bench\NetTopologySuite.Optimized.Bench.csproj", "{31B9C59F-CD2C-4707-A3CF-BC11187D28C4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{C25AFB43-3818-482E-8749-D179C2E5B39B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C25AFB43-3818-482E-8749-D179C2E5B39B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C25AFB43-3818-482E-8749-D179C2E5B39B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31B9C59F-CD2C-4707-A3CF-BC11187D28C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31B9C59F-CD2C-4707-A3CF-BC11187D28C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31B9C59F-CD2C-4707-A3CF-BC11187D28C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31B9C59F-CD2C-4707-A3CF-BC11187D28C4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

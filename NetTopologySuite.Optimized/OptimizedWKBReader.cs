@@ -173,11 +173,12 @@ namespace NetTopologySuite.Optimized
 
         private static unsafe ICoordinateSequence ReadAOSCoordinateSequence(ref ReadOnlySpan<byte> bytes, int cnt)
         {
-            double[] vals = new double[cnt + cnt];
-            ReadOnlySpan<byte> src = bytes.Slice(0, vals.Length * 8);
+            PackedDoubleCoordinateSequence seq = new PackedDoubleCoordinateSequence(cnt, 2);
+            Span<byte> dst = seq.GetRawCoordinates().AsSpan().AsBytes();
+            ReadOnlySpan<byte> src = bytes.Slice(0, dst.Length);
             bytes = bytes.Slice(src.Length);
-            src.CopyTo(new Span<double>(vals).AsBytes());
-            return new PackedDoubleCoordinateSequence(vals, 2);
+            src.CopyTo(dst);
+            return seq;
         }
 
         private static T Read<T>(ref ReadOnlySpan<byte> span)

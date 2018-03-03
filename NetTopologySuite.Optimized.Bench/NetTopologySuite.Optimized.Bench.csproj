@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Name="NetTopologySuite.Optimized" Include="..\NetTopologySuite.Optimized\NetTopologySuite.Optimized.csproj" />
+
+    <PackageReference Include="BenchmarkDotNet" Version="0.10.13" />
+  </ItemGroup>
+
+</Project>
