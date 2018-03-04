@@ -104,10 +104,7 @@ namespace NetTopologySuite.Optimized
                 return;
             }
 
-            // work around dotnet/coreclr#16470 by making copies.
-            Raw.Coordinate p0 = new Raw.Coordinate(coords[0]);
-            Raw.Coordinate p1 = new Raw.Coordinate(coords[coords.Length - 1]);
-            LineSegment l = new LineSegment(p0, p1);
+            LineSegment l = new LineSegment(coords[0], coords[coords.Length - 1]);
 
             double maxDistance = -1;
             int maxIndex = 0;

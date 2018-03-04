@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
@@ -14,7 +15,6 @@ using NetTopologySuite.IO;
 
 namespace NetTopologySuite.Optimized.Bench
 {
-    [MemoryDiagnoser]
     public class Program
     {
         private byte[] data;
