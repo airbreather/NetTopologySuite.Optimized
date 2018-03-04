@@ -15,6 +15,7 @@ using NetTopologySuite.IO;
 
 namespace NetTopologySuite.Optimized.Bench
 {
+    [MemoryDiagnoser]
     public class Program
     {
         private byte[] data;
@@ -38,6 +39,46 @@ namespace NetTopologySuite.Optimized.Bench
             }
 
             this.data = factory.CreateMultiPolygon(polygons).AsBinary();
+        }
+
+        [Benchmark(Baseline = true)]
+        public unsafe double ReadDirectlyFromArray()
+        {
+            // this should be very nearly the absolute fastest that managed code can hope to attain
+            // from tooling available today.  it takes advantage of our knowledge of the shape of
+            // the input data (stopping short at assuming counts of geometries, rings, or points)
+            // and assumes that the hardware can handle unaligned reads no worse than we can; modern
+            // JITs should be able to emit very high-quality code for this as there's very little
+            // complicated stuff going on. using it as a baseline lets us talk about just how much
+            // each different kind of abstraction costs us.
+            double minX = Double.PositiveInfinity;
+            fixed (byte* f_wkb = this.data)
+            {
+                int geomCount = *(int*)(f_wkb + 5);
+                byte* wkb = f_wkb + 9;
+                for (int i = 0; i < geomCount; i++)
+                {
+                    int ringCount = *(int*)(wkb + 5);
+                    wkb += 9;
+                    for (int j = 0; j < ringCount; j++)
+                    {
+                        int ptCount = *(int*)wkb;
+                        wkb += 4;
+                        for (int k = 0; k < ptCount; k++)
+                        {
+                            double pt = *(double*)wkb;
+                            if (pt < minX)
+                            {
+                                minX = pt;
+                            }
+
+                            wkb += 16;
+                        }
+                    }
+                }
+            }
+
+            return minX;
         }
 
         [Benchmark]
@@ -252,7 +293,7 @@ namespace NetTopologySuite.Optimized.Bench
         }
 
         [Benchmark]
-        public double ReadOptimizedRaw_MaximumDanger()
+        public double ReadOptimizedRaw_SkipValidation()
         {
             // best we can possibly do with our knowledge of the data:
             // - we can access the WKB directly to avoid copying the whole thing
@@ -291,12 +332,14 @@ namespace NetTopologySuite.Optimized.Bench
             Console.WriteLine(prog.ReadOptimizedSOA_Vector());
             Console.WriteLine(prog.ReadOptimizedRaw_Straightforward());
             Console.WriteLine(prog.ReadOptimizedRaw_NonPortableCast());
-            Console.WriteLine(prog.ReadOptimizedRaw_MaximumDanger());
+            Console.WriteLine(prog.ReadOptimizedRaw_SkipValidation());
+            Console.WriteLine(prog.ReadDirectlyFromArray());
 
             BenchmarkRunner.Run<Program>(
                 ManualConfig.Create(
                     DefaultConfig.Instance.With(
-                        Job.Default.WithGcServer(true))));
+                        Job.Core.WithGcServer(true),
+                        Job.Clr.WithGcServer(true))));
         }
     }
 }
