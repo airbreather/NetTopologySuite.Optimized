@@ -2,11 +2,11 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
 
-namespace NetTopologySuite.Optimized
+namespace NetTopologySuite.Optimized.Algorithm
 {
     public static class OptimizedDouglasPeuckerLineSimplifier
     {
-        public static int Simplify(ReadOnlySpan<Raw.Coordinate> inputCoords, Span<Raw.Coordinate> outputCoords, double distanceTolerance)
+        public static int Simplify(ReadOnlySpan<XYCoordinate> inputCoords, Span<XYCoordinate> outputCoords, double distanceTolerance)
         {
             if (!IsFinite(distanceTolerance))
             {
@@ -48,7 +48,7 @@ namespace NetTopologySuite.Optimized
             }
         }
 
-        private static int CopyWithLengthChecks(ReadOnlySpan<Raw.Coordinate> inputCoords, Span<Raw.Coordinate> outputCoords, ReadOnlySpan<bool> includes)
+        private static int CopyWithLengthChecks(ReadOnlySpan<XYCoordinate> inputCoords, Span<XYCoordinate> outputCoords, ReadOnlySpan<bool> includes)
         {
             int cnt = 0;
             for (int i = 0; i < includes.Length; i++)
@@ -72,7 +72,7 @@ namespace NetTopologySuite.Optimized
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowExceptionForOutputCoordsTooShort() => throw new ArgumentException("Must be large enough to hold all output coordinates.", "outputCoords");
 
-        private static int CopyWithoutLengthChecks(ReadOnlySpan<Raw.Coordinate> inputCoords, Span<Raw.Coordinate> outputCoords, ReadOnlySpan<bool> includes)
+        private static int CopyWithoutLengthChecks(ReadOnlySpan<XYCoordinate> inputCoords, Span<XYCoordinate> outputCoords, ReadOnlySpan<bool> includes)
         {
             int cnt = 0;
             for (int i = 0; i < includes.Length; i++)
@@ -95,7 +95,7 @@ namespace NetTopologySuite.Optimized
             return (bits & 0x7FFFFFFFFFFFFFFF) < 0x7FF0000000000000;
         }
 
-        private static void SimplifyCore(ReadOnlySpan<Raw.Coordinate> coords, Span<bool> includes, double distanceTolerance)
+        private static void SimplifyCore(ReadOnlySpan<XYCoordinate> coords, Span<bool> includes, double distanceTolerance)
         {
             if (includes.Length == 2)
             {
@@ -118,7 +118,7 @@ namespace NetTopologySuite.Optimized
             }
         }
 
-        private static void FindMax(ReadOnlySpan<Raw.Coordinate> coords, out double maxDistance, out int maxIndex)
+        private static void FindMax(ReadOnlySpan<XYCoordinate> coords, out double maxDistance, out int maxIndex)
         {
             LineSegment l = new LineSegment(coords[0], coords[coords.Length - 1]);
 
@@ -137,15 +137,15 @@ namespace NetTopologySuite.Optimized
 
         private readonly struct LineSegment
         {
-            private readonly Raw.Coordinate A;
-            private readonly Raw.Coordinate B;
+            private readonly XYCoordinate A;
+            private readonly XYCoordinate B;
 
             private readonly double dx;
             private readonly double dy;
             private readonly double len2;
             private readonly double len;
 
-            public LineSegment(Raw.Coordinate p0, Raw.Coordinate p1)
+            public LineSegment(XYCoordinate p0, XYCoordinate p1)
             {
                 A = p0;
                 B = p1;
@@ -157,7 +157,7 @@ namespace NetTopologySuite.Optimized
                 len = Math.Sqrt(len2);
             }
 
-            public double DistanceTo(Raw.Coordinate p)
+            public double DistanceTo(XYCoordinate p)
             {
                 if (len2 == 0)
                 {
@@ -181,7 +181,7 @@ namespace NetTopologySuite.Optimized
                 return Math.Abs(s) * len;
             }
 
-            private static double Distance(Raw.Coordinate p0, Raw.Coordinate p1)
+            private static double Distance(XYCoordinate p0, XYCoordinate p1)
             {
                 double dx = p1.X - p0.X;
                 double dy = p1.Y - p0.Y;

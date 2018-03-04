@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace NetTopologySuite.Optimized.Raw
+namespace NetTopologySuite.Optimized
 {
     public ref struct RawGeometry
     {

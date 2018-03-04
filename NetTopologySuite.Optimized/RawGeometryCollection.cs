@@ -2,13 +2,13 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace NetTopologySuite.Optimized.Raw
+namespace NetTopologySuite.Optimized
 {
-    public ref struct GeometryCollection
+    public ref struct RawGeometryCollection
     {
         public RawGeometry RawGeometry;
 
-        public GeometryCollection(RawGeometry rawGeometry)
+        public RawGeometryCollection(RawGeometry rawGeometry)
         {
             switch (rawGeometry.GeometryType)
             {
@@ -40,22 +40,22 @@ namespace NetTopologySuite.Optimized.Raw
                 switch (cur.GeometryType)
                 {
                     case GeometryType.Point:
-                        new Point(cur);
+                        new RawPoint(cur);
                         break;
 
                     case GeometryType.LineString:
-                        new LineString(cur);
+                        new RawLineString(cur);
                         break;
 
                     case GeometryType.Polygon:
-                        new Polygon(cur);
+                        new RawPolygon(cur);
                         break;
 
                     case GeometryType.MultiPoint:
                     case GeometryType.MultiLineString:
                     case GeometryType.MultiPolygon:
                     case GeometryType.GeometryCollection:
-                        new GeometryCollection(cur);
+                        new RawGeometryCollection(cur);
                         break;
 
                     default:
@@ -121,18 +121,18 @@ namespace NetTopologySuite.Optimized.Raw
                 switch (this.RawGeometry.GeometryType)
                 {
                     case GeometryType.MultiPoint:
-                        Point pt = default;
+                        RawPoint pt = default;
                         pt.RawGeometry = cur;
                         geoms[i] = pt.ToGeoAPI(factory);
                         break;
 
                     case GeometryType.MultiLineString:
-                        LineString ls = default;
+                        RawLineString ls = default;
                         geoms[i] = ls.ToGeoAPI(factory);
                         break;
 
                     case GeometryType.MultiPolygon:
-                        Polygon poly = default;
+                        RawPolygon poly = default;
                         poly.RawGeometry = cur;
                         geoms[i] = poly.ToGeoAPI(factory);
                         break;
@@ -141,19 +141,19 @@ namespace NetTopologySuite.Optimized.Raw
                         switch (cur.GeometryType)
                         {
                             case GeometryType.Point:
-                                Point ptChild = default;
+                                RawPoint ptChild = default;
                                 ptChild.RawGeometry = cur;
                                 geoms[i] = ptChild.ToGeoAPI(factory);
                                 break;
 
                             case GeometryType.LineString:
-                                LineString lsChild = default;
+                                RawLineString lsChild = default;
                                 lsChild.RawGeometry = cur;
                                 geoms[i] = lsChild.ToGeoAPI(factory);
                                 break;
 
                             case GeometryType.Polygon:
-                                Polygon polyChild = default;
+                                RawPolygon polyChild = default;
                                 polyChild.RawGeometry = cur;
                                 geoms[i] = polyChild.ToGeoAPI(factory);
                                 break;
@@ -162,7 +162,7 @@ namespace NetTopologySuite.Optimized.Raw
                             case GeometryType.MultiLineString:
                             case GeometryType.MultiPolygon:
                             case GeometryType.GeometryCollection:
-                                GeometryCollection coll = default;
+                                RawGeometryCollection coll = default;
                                 coll.RawGeometry = cur;
                                 geoms[i] = coll.ToGeoAPI(factory);
                                 break;
@@ -192,7 +192,7 @@ namespace NetTopologySuite.Optimized.Raw
             }
         }
 
-        public bool EqualsExact(GeometryCollection other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
+        public bool EqualsExact(RawGeometryCollection other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
 
         public override string ToString() => $"[GeomCount = {this.GeomCount}]";
 
@@ -219,7 +219,7 @@ namespace NetTopologySuite.Optimized.Raw
 
             private RawGeometry current;
 
-            internal Enumerator(GeometryCollection coll) => this.rem = coll.RawGeometry.Data.Slice(9);
+            internal Enumerator(RawGeometryCollection coll) => this.rem = coll.RawGeometry.Data.Slice(9);
 
             public RawGeometry Current => this.current;
 

@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 
-namespace NetTopologySuite.Optimized.Raw
+namespace NetTopologySuite.Optimized
 {
-    public ref struct LineString
+    public ref struct RawLineString
     {
         public RawGeometry RawGeometry;
 
-        public LineString(RawGeometry rawGeometry)
+        public RawLineString(RawGeometry rawGeometry)
         {
             if (rawGeometry.GeometryType != GeometryType.LineString)
             {
@@ -15,14 +15,14 @@ namespace NetTopologySuite.Optimized.Raw
             }
 
             this.RawGeometry = rawGeometry;
-            new CoordinateSequence(this.RawGeometry.Data.Slice(5));
+            new RawCoordinateSequence(this.RawGeometry.Data.Slice(5));
         }
 
-        public CoordinateSequence Coordinates
+        public RawCoordinateSequence Coordinates
         {
             get
             {
-                CoordinateSequence result = default;
+                RawCoordinateSequence result = default;
                 result.PointData = this.RawGeometry.Data.Slice(5);
                 return result;
             }
@@ -36,7 +36,7 @@ namespace NetTopologySuite.Optimized.Raw
                 : factory.CreateLineString(seq);
         }
 
-        public bool EqualsExact(LineString other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
+        public bool EqualsExact(RawLineString other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
 
         public override string ToString() => $"[Coordinates = {this.Coordinates.ToString()}]";
 

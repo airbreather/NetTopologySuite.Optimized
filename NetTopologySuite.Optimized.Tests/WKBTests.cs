@@ -4,7 +4,6 @@ using System.IO;
 using GeoAPI.Geometries;
 
 using NetTopologySuite.Geometries.Implementation;
-using NetTopologySuite.Optimized.Raw;
 
 using Xunit;
 using Xunit.Abstractions;
@@ -32,7 +31,7 @@ namespace NetTopologySuite.Optimized.Tests
             ReadOnlySpan<byte> rtWkb = OptimizedWKBWriter.Write(geom);
             Assert.True(rtWkb.SequenceEqual(wkb));
 
-            var geom2 = new Polygon(new RawGeometry(wkb)).ToGeoAPI(factory);
+            var geom2 = new RawPolygon(new RawGeometry(wkb)).ToGeoAPI(factory);
             Assert.True(geom.EqualsExact(geom2));
         }
 
@@ -49,7 +48,7 @@ namespace NetTopologySuite.Optimized.Tests
             ReadOnlySpan<byte> rtWkb = OptimizedWKBWriter.Write(geom);
             Assert.True(rtWkb.SequenceEqual(wkb));
 
-            var geom2 = new Polygon(new RawGeometry(wkb)).ToGeoAPI(factory);
+            var geom2 = new RawPolygon(new RawGeometry(wkb)).ToGeoAPI(factory);
             Assert.True(geom.EqualsExact(geom2));
         }
     }

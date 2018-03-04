@@ -2,13 +2,13 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace NetTopologySuite.Optimized.Raw
+namespace NetTopologySuite.Optimized
 {
-    public ref struct Polygon
+    public ref struct RawPolygon
     {
         public RawGeometry RawGeometry;
 
-        public Polygon(RawGeometry rawGeometry)
+        public RawPolygon(RawGeometry rawGeometry)
         {
             if (rawGeometry.GeometryType != GeometryType.Polygon)
             {
@@ -26,7 +26,7 @@ namespace NetTopologySuite.Optimized.Raw
             for (int i = 0; i < ringCount && rem.Length >= 4; i++)
             {
                 int len = 4 + Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16;
-                var cs = new CoordinateSequence(rem.Slice(0, len));
+                var cs = new RawCoordinateSequence(rem.Slice(0, len));
                 if (cs.GetCoordinate(0) != cs.GetCoordinate(cs.PointCount - 1))
                 {
                     ThrowArgumentExceptionForUnclosedRing(i);
@@ -43,7 +43,7 @@ namespace NetTopologySuite.Optimized.Raw
 
         public int RingCount => Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(this.RawGeometry.Data.Slice(5)));
 
-        public CoordinateSequence GetRing(int ringIndex)
+        public RawCoordinateSequence GetRing(int ringIndex)
         {
             var rem = this.RawGeometry.Data.Slice(9);
             for (int i = 0; i < ringIndex; i++)
@@ -51,7 +51,7 @@ namespace NetTopologySuite.Optimized.Raw
                 rem = rem.Slice(Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16 + 4);
             }
 
-            CoordinateSequence result = default;
+            RawCoordinateSequence result = default;
             result.PointData = rem.Slice(0, Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16 + 4);
             return result;
         }
@@ -66,7 +66,7 @@ namespace NetTopologySuite.Optimized.Raw
 
             var rem = this.RawGeometry.Data.Slice(9);
             var ringLength = Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16 + 4;
-            CoordinateSequence shell = default;
+            RawCoordinateSequence shell = default;
             shell.PointData = rem.Slice(0, ringLength);
             rem = rem.Slice(ringLength);
 
@@ -77,7 +77,7 @@ namespace NetTopologySuite.Optimized.Raw
             for (int i = 0; i < holes.Length; i++)
             {
                 ringLength = Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(rem)) * 16 + 4;
-                CoordinateSequence ring = default;
+                RawCoordinateSequence ring = default;
                 ring.PointData = rem.Slice(0, ringLength);
                 holes[i] = factory.CreateLinearRing(ring.ToGeoAPI(factory.CoordinateSequenceFactory));
                 rem = rem.Slice(ringLength);
@@ -86,7 +86,7 @@ namespace NetTopologySuite.Optimized.Raw
             return factory.CreatePolygon(factory.CreateLinearRing(shell.ToGeoAPI(factory.CoordinateSequenceFactory)), holes);
         }
 
-        public bool EqualsExact(Polygon other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
+        public bool EqualsExact(RawPolygon other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
 
         public override string ToString() => $"[RingCount = {this.RingCount}]";
 
@@ -108,11 +108,11 @@ namespace NetTopologySuite.Optimized.Raw
         {
             private ReadOnlySpan<byte> rem;
 
-            private CoordinateSequence current;
+            private RawCoordinateSequence current;
 
-            internal Enumerator(Polygon poly) => this.rem = poly.RawGeometry.Data.Slice(9);
+            internal Enumerator(RawPolygon poly) => this.rem = poly.RawGeometry.Data.Slice(9);
 
-            public CoordinateSequence Current => this.current;
+            public RawCoordinateSequence Current => this.current;
 
             public bool MoveNext()
             {

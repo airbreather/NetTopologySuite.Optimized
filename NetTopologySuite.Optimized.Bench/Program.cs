@@ -210,12 +210,12 @@ namespace NetTopologySuite.Optimized.Bench
         {
             // best we can possibly do with our knowledge of the data:
             // - we can access the WKB directly to avoid copying the whole thing
-            Raw.GeometryCollection coll = new Raw.GeometryCollection(new Raw.RawGeometry(this.data));
+            RawGeometryCollection coll = new RawGeometryCollection(new RawGeometry(this.data));
             double minX = Double.PositiveInfinity;
-            foreach (Raw.RawGeometry geom in coll)
+            foreach (RawGeometry geom in coll)
             {
-                Raw.CoordinateSequence seq = new Raw.Polygon(geom).GetRing(0);
-                foreach (Raw.Coordinate c in seq)
+                RawCoordinateSequence seq = new RawPolygon(geom).GetRing(0);
+                foreach (XYCoordinate c in seq)
                 {
                     if (c.X < minX)
                     {
@@ -233,11 +233,11 @@ namespace NetTopologySuite.Optimized.Bench
             // best we can possibly do with our knowledge of the data:
             // - we can access the WKB directly to avoid copying the whole thing
             // - this one was tuned for architectures that support reads at unaligned addresses
-            Raw.GeometryCollection coll = new Raw.GeometryCollection(new Raw.RawGeometry(this.data));
+            RawGeometryCollection coll = new RawGeometryCollection(new RawGeometry(this.data));
             double minX = Double.PositiveInfinity;
-            foreach (Raw.RawGeometry geom in coll)
+            foreach (RawGeometry geom in coll)
             {
-                Raw.CoordinateSequence seq = new Raw.Polygon(geom).GetRing(0);
+                RawCoordinateSequence seq = new RawPolygon(geom).GetRing(0);
                 ReadOnlySpan<double> pts = seq.PointData.Slice(4).NonPortableCast<byte, double>();
                 for (int j = 0; j < pts.Length; j += 2)
                 {
@@ -258,14 +258,14 @@ namespace NetTopologySuite.Optimized.Bench
             // - we can access the WKB directly to avoid copying the whole thing
             // - this one was tuned for architectures that support reads at unaligned addresses
             // - we can also skip the validation that "new" does, because we know it's valid
-            Raw.GeometryCollection coll = default;
+            RawGeometryCollection coll = default;
             coll.RawGeometry.Data = this.data;
             double minX = Double.PositiveInfinity;
-            foreach (Raw.RawGeometry geom in coll)
+            foreach (RawGeometry geom in coll)
             {
-                Raw.Polygon poly = default;
+                RawPolygon poly = default;
                 poly.RawGeometry = geom;
-                Raw.CoordinateSequence seq = poly.GetRing(0);
+                RawCoordinateSequence seq = poly.GetRing(0);
                 ReadOnlySpan<double> pts = seq.PointData.Slice(4).NonPortableCast<byte, double>();
                 for (int j = 0; j < pts.Length; j += 2)
                 {

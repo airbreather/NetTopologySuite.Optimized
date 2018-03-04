@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
+using NetTopologySuite.Optimized.Algorithm;
 using NetTopologySuite.Simplify;
 
 using Xunit;
@@ -27,8 +28,8 @@ namespace NetTopologySuite.Optimized.Tests
         [MemberData(nameof(TestCases))]
         public void AcceptanceTest(string inputText, double distanceTolerance)
         {
-            Raw.Coordinate[] input = ParseCoordinates(inputText);
-            Raw.Coordinate[] actual = new Raw.Coordinate[input.Length];
+            XYCoordinate[] input = ParseCoordinates(inputText);
+            XYCoordinate[] actual = new XYCoordinate[input.Length];
             int sz = OptimizedDouglasPeuckerLineSimplifier.Simplify(input, actual, distanceTolerance);
             Array.Resize(ref actual, sz);
 
@@ -38,15 +39,15 @@ namespace NetTopologySuite.Optimized.Tests
                 nts = DouglasPeuckerLineSimplifier.Simplify(nts, distanceTolerance);
             }
 
-            Raw.Coordinate[] expected = Array.ConvertAll(nts, c => new Raw.Coordinate(c));
+            XYCoordinate[] expected = Array.ConvertAll(nts, c => new XYCoordinate(c));
 
             Assert.Equal(expected, actual);
         }
 
-        private static Raw.Coordinate[] ParseCoordinates(string toParse)
+        private static XYCoordinate[] ParseCoordinates(string toParse)
         {
             string[] coords = toParse.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            Raw.Coordinate[] result = new Raw.Coordinate[coords.Length];
+            XYCoordinate[] result = new XYCoordinate[coords.Length];
             for (int i = 0; i < coords.Length; i++)
             {
                 string[] vals = coords[i].Split(' ', StringSplitOptions.RemoveEmptyEntries);

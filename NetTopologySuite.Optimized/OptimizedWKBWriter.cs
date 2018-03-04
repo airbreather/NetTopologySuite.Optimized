@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices;
 
 using GeoAPI.Geometries;
-using GeoAPI.IO;
 
 using NetTopologySuite.Geometries.Implementation;
 using NetTopologySuite.IO;

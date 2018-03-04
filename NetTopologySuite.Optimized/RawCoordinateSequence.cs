@@ -2,13 +2,13 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace NetTopologySuite.Optimized.Raw
+namespace NetTopologySuite.Optimized
 {
-    public ref struct CoordinateSequence
+    public ref struct RawCoordinateSequence
     {
         public ReadOnlySpan<byte> PointData;
 
-        public CoordinateSequence(ReadOnlySpan<byte> pointData)
+        public RawCoordinateSequence(ReadOnlySpan<byte> pointData)
         {
             this.PointData = pointData;
             int pointCountByLength = Math.DivRem(pointData.Length - 4, 16, out int remainder);
@@ -35,9 +35,9 @@ namespace NetTopologySuite.Optimized.Raw
             return seq;
         }
 
-        public Coordinate GetCoordinate(int idx) => Unsafe.ReadUnaligned<Coordinate>(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(this.PointData), new IntPtr(idx * 16 + 4)));
+        public XYCoordinate GetCoordinate(int idx) => Unsafe.ReadUnaligned<XYCoordinate>(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(this.PointData), new IntPtr(idx * 16 + 4)));
 
-        public bool EqualsExact(CoordinateSequence other) => this.PointData.SequenceEqual(other.PointData);
+        public bool EqualsExact(RawCoordinateSequence other) => this.PointData.SequenceEqual(other.PointData);
 
         public override string ToString() => $"[PointCount = {this.PointCount}]";
 
@@ -50,15 +50,15 @@ namespace NetTopologySuite.Optimized.Raw
         {
             private ReadOnlySpan<byte> rem;
 
-            private Coordinate current;
+            private XYCoordinate current;
 
-            internal Enumerator(CoordinateSequence seq)
+            internal Enumerator(RawCoordinateSequence seq)
             {
                 this.rem = seq.PointData.Slice(4);
                 this.current = default;
             }
 
-            public Coordinate Current => this.current;
+            public XYCoordinate Current => this.current;
 
             public bool MoveNext()
             {
@@ -67,7 +67,7 @@ namespace NetTopologySuite.Optimized.Raw
                     return false;
                 }
 
-                this.current = Unsafe.ReadUnaligned<Coordinate>(ref MemoryMarshal.GetReference(this.rem));
+                this.current = Unsafe.ReadUnaligned<XYCoordinate>(ref MemoryMarshal.GetReference(this.rem));
                 this.rem = this.rem.Slice(16);
                 return true;
             }

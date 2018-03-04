@@ -1,4 +1,4 @@
-﻿namespace NetTopologySuite.Optimized.Raw
+﻿namespace NetTopologySuite.Optimized
 {
     public enum GeometryType
     {

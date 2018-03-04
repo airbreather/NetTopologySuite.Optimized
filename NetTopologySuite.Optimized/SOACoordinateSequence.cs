@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices;
 
 using GeoAPI.Geometries;
-
 using NetTopologySuite.Geometries.Implementation;
 
 namespace NetTopologySuite.Optimized

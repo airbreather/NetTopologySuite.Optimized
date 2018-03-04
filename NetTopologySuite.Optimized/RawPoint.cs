@@ -2,13 +2,13 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace NetTopologySuite.Optimized.Raw
+namespace NetTopologySuite.Optimized
 {
-    public ref struct Point
+    public ref struct RawPoint
     {
         public RawGeometry RawGeometry;
 
-        public Point(RawGeometry rawGeometry)
+        public RawPoint(RawGeometry rawGeometry)
         {
             if (rawGeometry.GeometryType != GeometryType.Point)
             {
@@ -27,11 +27,11 @@ namespace NetTopologySuite.Optimized.Raw
 
         public double Y => Unsafe.ReadUnaligned<double>(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(this.RawGeometry.Data), new IntPtr(13)));
 
-        public Coordinate CoordinateValue => Unsafe.ReadUnaligned<Coordinate>(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(this.RawGeometry.Data), new IntPtr(5)));
+        public XYCoordinate CoordinateValue => Unsafe.ReadUnaligned<XYCoordinate>(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(this.RawGeometry.Data), new IntPtr(5)));
 
         public GeoAPI.Geometries.IPoint ToGeoAPI(GeoAPI.Geometries.IGeometryFactory factory) => factory.CreatePoint(this.CoordinateValue.ToGeoAPI());
 
-        public bool EqualsExact(Point other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
+        public bool EqualsExact(RawPoint other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
 
         public override string ToString() => $"[X: {this.X}, Y: {this.Y}]";
 

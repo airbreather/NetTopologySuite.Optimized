@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 
 using GeoAPI;
 using GeoAPI.Geometries;
-using GeoAPI.IO;
 
 using NetTopologySuite.Geometries.Implementation;
 using NetTopologySuite.IO;
