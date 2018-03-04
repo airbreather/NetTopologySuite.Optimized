@@ -64,15 +64,23 @@ namespace NetTopologySuite.Optimized.Bench
                     {
                         int ptCount = *(int*)wkb;
                         wkb += 4;
-                        for (int k = 0; k < ptCount; k++)
+                        if (j == 0)
                         {
-                            double pt = *(double*)wkb;
-                            if (pt < minX)
+                            // extreme points are always in the shell (first ring).
+                            for (int k = 0; k < ptCount; k++)
                             {
-                                minX = pt;
-                            }
+                                double pt = *(double*)wkb;
+                                if (pt < minX)
+                                {
+                                    minX = pt;
+                                }
 
-                            wkb += 16;
+                                wkb += 16;
+                            }
+                        }
+                        else
+                        {
+                            wkb += ptCount * 16;
                         }
                     }
                 }
@@ -92,6 +100,8 @@ namespace NetTopologySuite.Optimized.Bench
             foreach (IGeometry geom in mp.Geometries)
             {
                 IPolygon poly = (IPolygon)geom;
+
+                // extreme points are always in the shell (first ring).
                 foreach (Coordinate coord in poly.Shell.Coordinates)
                 {
                     if (coord.X < minX)
@@ -115,6 +125,8 @@ namespace NetTopologySuite.Optimized.Bench
             foreach (IGeometry geom in mp.Geometries)
             {
                 IPolygon poly = (IPolygon)geom;
+
+                // extreme points are always in the shell (first ring).
                 PackedDoubleCoordinateSequence seq = (PackedDoubleCoordinateSequence)poly.Shell.CoordinateSequence;
                 double[] rawCoords = seq.GetRawCoordinates();
                 for (int i = 0; i < rawCoords.Length; i += 2)
@@ -140,6 +152,8 @@ namespace NetTopologySuite.Optimized.Bench
             foreach (IGeometry geom in mp.Geometries)
             {
                 IPolygon poly = (IPolygon)geom;
+
+                // extreme points are always in the shell (first ring).
                 PackedFloatCoordinateSequence seq = (PackedFloatCoordinateSequence)poly.Shell.CoordinateSequence;
                 float[] rawCoords = seq.GetRawCoordinates();
                 for (int i = 0; i < rawCoords.Length; i += 2)
@@ -165,6 +179,8 @@ namespace NetTopologySuite.Optimized.Bench
             foreach (IGeometry geom in mp.Geometries)
             {
                 IPolygon poly = (IPolygon)geom;
+
+                // extreme points are always in the shell (first ring).
                 PackedDoubleCoordinateSequence seq = (PackedDoubleCoordinateSequence)poly.Shell.CoordinateSequence;
                 double[] rawCoords = seq.GetRawCoordinates();
                 for (int i = 0; i < rawCoords.Length; i += 2)
@@ -190,6 +206,8 @@ namespace NetTopologySuite.Optimized.Bench
             foreach (IGeometry geom in mp.Geometries)
             {
                 IPolygon poly = (IPolygon)geom;
+
+                // extreme points are always in the shell (first ring).
                 SOACoordinateSequence seq = (SOACoordinateSequence)poly.Shell.CoordinateSequence;
                 Span<double> xs = seq.Xs;
                 for (int i = 0; i < xs.Length; i++)
@@ -216,6 +234,8 @@ namespace NetTopologySuite.Optimized.Bench
             {
                 Vector<double> minXs = new Vector<double>(minX);
                 IPolygon poly = (IPolygon)geom;
+
+                // extreme points are always in the shell (first ring).
                 SOACoordinateSequence seq = (SOACoordinateSequence)poly.Shell.CoordinateSequence;
                 Span<double> xs = seq.Xs;
                 ref Vector<double> xsVecStart = ref Unsafe.As<double, Vector<double>>(ref MemoryMarshal.GetReference(xs));
@@ -255,6 +275,7 @@ namespace NetTopologySuite.Optimized.Bench
             double minX = Double.PositiveInfinity;
             foreach (RawGeometry geom in coll)
             {
+                // extreme points are always in the shell (first ring).
                 RawCoordinateSequence seq = new RawPolygon(geom).GetRing(0);
                 foreach (XYCoordinate c in seq)
                 {
@@ -278,6 +299,7 @@ namespace NetTopologySuite.Optimized.Bench
             double minX = Double.PositiveInfinity;
             foreach (RawGeometry geom in coll)
             {
+                // extreme points are always in the shell (first ring).
                 RawCoordinateSequence seq = new RawPolygon(geom).GetRing(0);
                 ReadOnlySpan<double> pts = seq.PointData.Slice(4).NonPortableCast<byte, double>();
                 for (int j = 0; j < pts.Length; j += 2)
@@ -306,6 +328,8 @@ namespace NetTopologySuite.Optimized.Bench
             {
                 RawPolygon poly = default;
                 poly.RawGeometry = geom;
+
+                // extreme points are always in the shell (first ring).
                 RawCoordinateSequence seq = poly.GetRing(0);
                 ReadOnlySpan<double> pts = seq.PointData.Slice(4).NonPortableCast<byte, double>();
                 for (int j = 0; j < pts.Length; j += 2)
