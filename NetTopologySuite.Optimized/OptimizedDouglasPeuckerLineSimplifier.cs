@@ -104,19 +104,7 @@ namespace NetTopologySuite.Optimized
                 return;
             }
 
-            LineSegment l = new LineSegment(coords[0], coords[coords.Length - 1]);
-
-            double maxDistance = -1;
-            int maxIndex = 0;
-            for (int i = 1; i < coords.Length - 1; i++)
-            {
-                double distance = l.DistanceTo(coords[i]);
-                if (distance > maxDistance)
-                {
-                    maxDistance = distance;
-                    maxIndex = i;
-                }
-            }
+            FindMax(coords, out double maxDistance, out int maxIndex);
 
             if (maxDistance <= distanceTolerance)
             {
@@ -127,6 +115,23 @@ namespace NetTopologySuite.Optimized
             {
                 SimplifyCore(coords.Slice(0, maxIndex + 1), includes.Slice(0, maxIndex + 1), distanceTolerance);
                 SimplifyCore(coords.Slice(maxIndex), includes.Slice(maxIndex), distanceTolerance);
+            }
+        }
+
+        private static void FindMax(ReadOnlySpan<Raw.Coordinate> coords, out double maxDistance, out int maxIndex)
+        {
+            LineSegment l = new LineSegment(coords[0], coords[coords.Length - 1]);
+
+            maxDistance = -1;
+            maxIndex = 0;
+            for (int i = 1; i < coords.Length - 1; i++)
+            {
+                double distance = l.DistanceTo(coords[i]);
+                if (distance > maxDistance)
+                {
+                    maxDistance = distance;
+                    maxIndex = i;
+                }
             }
         }
 
