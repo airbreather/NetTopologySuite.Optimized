@@ -20,6 +20,8 @@ namespace NetTopologySuite.Optimized
 
         public int PointCount => Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(this.PointData));
 
+        public ReadOnlySpan<XYCoordinate> NonPortableCoordinates => this.PointData.Slice(4).NonPortableCast<byte, XYCoordinate>();
+
         public GeoAPI.Geometries.ICoordinateSequence ToGeoAPI(GeoAPI.Geometries.ICoordinateSequenceFactory factory)
         {
             var pts = this.PointData.Slice(4);

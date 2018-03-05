@@ -276,8 +276,7 @@ namespace NetTopologySuite.Optimized.Bench
             foreach (RawGeometry geom in coll)
             {
                 // extreme points are always in the shell (first ring).
-                RawCoordinateSequence seq = new RawPolygon(geom).GetRing(0);
-                foreach (XYCoordinate c in seq)
+                foreach (XYCoordinate c in new RawPolygon(geom).GetRing(0))
                 {
                     if (c.X < minX)
                     {
@@ -300,13 +299,12 @@ namespace NetTopologySuite.Optimized.Bench
             foreach (RawGeometry geom in coll)
             {
                 // extreme points are always in the shell (first ring).
-                RawCoordinateSequence seq = new RawPolygon(geom).GetRing(0);
-                ReadOnlySpan<double> pts = seq.PointData.Slice(4).NonPortableCast<byte, double>();
-                for (int j = 0; j < pts.Length; j += 2)
+                ReadOnlySpan<XYCoordinate> pts = new RawPolygon(geom).GetRing(0).NonPortableCoordinates;
+                for (int j = 0; j < pts.Length; j++)
                 {
-                    if (pts[j] < minX)
+                    if (pts[j].X < minX)
                     {
-                        minX = pts[j];
+                        minX = pts[j].X;
                     }
                 }
             }
@@ -330,13 +328,46 @@ namespace NetTopologySuite.Optimized.Bench
                 poly.RawGeometry = geom;
 
                 // extreme points are always in the shell (first ring).
-                RawCoordinateSequence seq = poly.GetRing(0);
-                ReadOnlySpan<double> pts = seq.PointData.Slice(4).NonPortableCast<byte, double>();
-                for (int j = 0; j < pts.Length; j += 2)
+                ReadOnlySpan<XYCoordinate> pts = poly.GetRing(0).NonPortableCoordinates;
+                for (int j = 0; j < pts.Length; j++)
                 {
-                    if (pts[j] < minX)
+                    if (pts[j].X < minX)
                     {
-                        minX = pts[j];
+                        minX = pts[j].X;
+                    }
+                }
+            }
+
+            return minX;
+        }
+
+        [Benchmark]
+        public double ReadOptimizedRaw_Refs()
+        {
+            // best we can possibly do with our knowledge of the data:
+            // - we can access the WKB directly to avoid copying the whole thing
+            // - this one was tuned for architectures that support reads at unaligned addresses
+            // - we can also skip the validation that "new" does, because we know it's valid
+            // - this one's just about the best you can do in "slow span" runtimes without going all
+            //   the way down to "just read directly from the array" though using S.R.CS.Unsafe, ref
+            //   locals, and the non-portable magic wand should give one pause before doing this.
+            RawGeometryCollection coll = default;
+            coll.RawGeometry.Data = this.data;
+            double minX = Double.PositiveInfinity;
+            foreach (RawGeometry geom in coll)
+            {
+                RawPolygon poly = default;
+                poly.RawGeometry = geom;
+
+                // extreme points are always in the shell (first ring).
+                ReadOnlySpan<XYCoordinate> pts = poly.GetRing(0).NonPortableCoordinates;
+                ref XYCoordinate ptStart = ref MemoryMarshal.GetReference(pts);
+                for (int j = 0; j < pts.Length; j++)
+                {
+                    double x = Unsafe.Add(ref ptStart, j).X;
+                    if (x < minX)
+                    {
+                        minX = x;
                     }
                 }
             }
@@ -350,7 +381,7 @@ namespace NetTopologySuite.Optimized.Bench
             prog.Setup();
             Console.WriteLine(prog.ReadNTSCoordinateArray());
             Console.WriteLine(prog.ReadNTSPackedDouble());
-            Console.WriteLine(prog.ReadNTSPackedFloat()); // this one's expected to be a bit off
+            Console.WriteLine(prog.ReadNTSPackedFloat()); // this one's expected to be a little off
             Console.WriteLine(prog.ReadOptimizedAOS());
             Console.WriteLine(prog.ReadOptimizedSOA_Scalar());
             Console.WriteLine(prog.ReadOptimizedSOA_Vector());
@@ -358,6 +389,7 @@ namespace NetTopologySuite.Optimized.Bench
             Console.WriteLine(prog.ReadOptimizedRaw_NonPortableCast());
             Console.WriteLine(prog.ReadOptimizedRaw_SkipValidation());
             Console.WriteLine(prog.ReadDirectlyFromArray());
+            Console.WriteLine(prog.ReadOptimizedRaw_Refs());
 
             BenchmarkRunner.Run<Program>(
                 ManualConfig.Create(
