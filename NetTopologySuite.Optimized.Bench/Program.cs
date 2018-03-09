@@ -267,6 +267,27 @@ namespace NetTopologySuite.Optimized.Bench
         }
 
         [Benchmark]
+        public double ReadOptimizedRaw_Visitor()
+        {
+            Visitor vis = new Visitor();
+            vis.Visit(new RawGeometry(this.data), VisitMode.Coordinates);
+            return vis.MinX;
+        }
+
+        private sealed class Visitor : RawGeometryVisitorBase
+        {
+            public double MinX = Double.PositiveInfinity;
+
+            protected override void OnVisitCoordinate(XYCoordinate coordinate)
+            {
+                if (coordinate.X < this.MinX)
+                {
+                    this.MinX = coordinate.X;
+                }
+            }
+        }
+
+        [Benchmark]
         public double ReadOptimizedRaw_Straightforward()
         {
             // best we can possibly do with our knowledge of the data:
@@ -390,6 +411,7 @@ namespace NetTopologySuite.Optimized.Bench
             Console.WriteLine(prog.ReadOptimizedRaw_SkipValidation());
             Console.WriteLine(prog.ReadDirectlyFromArray());
             Console.WriteLine(prog.ReadOptimizedRaw_Refs());
+            Console.WriteLine(prog.ReadOptimizedRaw_VisitorPattern());
 
             BenchmarkRunner.Run<Program>(
                 ManualConfig.Create(
