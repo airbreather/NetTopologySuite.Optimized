@@ -267,14 +267,14 @@ namespace NetTopologySuite.Optimized.Bench
         }
 
         [Benchmark]
-        public double ReadOptimizedRaw_Visitor()
+        public double ReadOptimizedRaw_Visitor_Straightforward()
         {
-            Visitor vis = new Visitor();
+            var vis = new MinXVisitor_Straightforward();
             vis.Visit(new RawGeometry(this.data), VisitMode.Coordinates);
             return vis.MinX;
         }
 
-        private sealed class Visitor : RawGeometryVisitorBase
+        private sealed class MinXVisitor_Straightforward : RawGeometryVisitorBase
         {
             public double MinX = Double.PositiveInfinity;
 
@@ -283,6 +283,31 @@ namespace NetTopologySuite.Optimized.Bench
                 if (coordinate.X < this.MinX)
                 {
                     this.MinX = coordinate.X;
+                }
+            }
+        }
+
+        [Benchmark]
+        public double ReadOptimizedRaw_Visitor_NonPortableCast()
+        {
+            var vis = new MinXVisitor_NonPortableCast();
+            vis.Visit(new RawGeometry(this.data), VisitMode.CoordinateSequences);
+            return vis.MinX;
+        }
+
+        private sealed class MinXVisitor_NonPortableCast : RawGeometryVisitorBase
+        {
+            public double MinX = Double.PositiveInfinity;
+
+            protected override void OnVisitRawCoordinateSequence(RawCoordinateSequence coordinateSequence)
+            {
+                var coords = coordinateSequence.NonPortableCoordinates;
+                for (int i = 0; i < coords.Length; i++)
+                {
+                    if (coords[i].X < this.MinX)
+                    {
+                        this.MinX = coords[i].X;
+                    }
                 }
             }
         }
@@ -411,7 +436,8 @@ namespace NetTopologySuite.Optimized.Bench
             Console.WriteLine(prog.ReadOptimizedRaw_SkipValidation());
             Console.WriteLine(prog.ReadDirectlyFromArray());
             Console.WriteLine(prog.ReadOptimizedRaw_Refs());
-            Console.WriteLine(prog.ReadOptimizedRaw_VisitorPattern());
+            Console.WriteLine(prog.ReadOptimizedRaw_Visitor_Straightforward());
+            Console.WriteLine(prog.ReadOptimizedRaw_Visitor_NonPortableCast());
 
             BenchmarkRunner.Run<Program>(
                 ManualConfig.Create(
