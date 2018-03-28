@@ -29,11 +29,20 @@ namespace NetTopologySuite.Optimized.Algorithm
                 return 1;
             }
 
-            // dotnet/roslyn#25118 is in the way of a straightforward stackalloc optimization here.
-            bool[] includeBuffer = ArrayPool<bool>.Shared.Rent(inputCoords.Length);
+            // Work around dotnet/roslyn#25118 by giving the compiler just enough of a hint
+            Span<bool> includes = stackalloc bool[0];
+            bool[] rentedBuffer = null;
+            if (inputCoords.Length < 1024)
+            {
+                includes = stackalloc bool[inputCoords.Length];
+            }
+            else
+            {
+                includes = rentedBuffer = ArrayPool<bool>.Shared.Rent(inputCoords.Length);
+            }
+
             try
             {
-                Span<bool> includes = new Span<bool>(includeBuffer, 0, inputCoords.Length);
                 includes.Clear();
 
                 SimplifyCore(inputCoords, includes, distanceTolerance);
@@ -44,7 +53,10 @@ namespace NetTopologySuite.Optimized.Algorithm
             }
             finally
             {
-                ArrayPool<bool>.Shared.Return(includeBuffer);
+                if (rentedBuffer != null)
+                {
+                    ArrayPool<bool>.Shared.Return(rentedBuffer);
+                }
             }
         }
 
