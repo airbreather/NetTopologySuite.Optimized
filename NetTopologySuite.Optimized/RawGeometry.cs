@@ -30,7 +30,12 @@ namespace NetTopologySuite.Optimized
 
         public static GeometryType GetGeometryType(ReadOnlySpan<byte> wkb)
         {
-            uint packedTyp = Unsafe.ReadUnaligned<uint>(ref MemoryMarshal.GetReference(wkb.Slice(1)));
+            if (wkb.Length < 5)
+            {
+                ThrowArgumentExceptionForTooShortWKB();
+            }
+
+            uint packedTyp = Unsafe.ReadUnaligned<uint>(ref Unsafe.AsRef(wkb[1]));
             if ((packedTyp & 0xE0000000) != 0)
             {
                 ThrowNotSupportedExceptionForBadDimension();
@@ -47,6 +52,100 @@ namespace NetTopologySuite.Optimized
             }
 
             return (GeometryType)type;
+        }
+
+        public static void SwapToNativeByteOrderIfNeeded(Span<byte> wkb)
+        {
+            Core(ref wkb);
+
+            void Core(ref Span<byte> wkb2)
+            {
+                bool swapCurrent = (unchecked((ByteOrder)(wkb2[0] & 1)) == ByteOrder.LittleEndian) != BitConverter.IsLittleEndian;
+
+                var geometryTypeData = wkb2.Slice(1, 4);
+                if (swapCurrent)
+                {
+                    geometryTypeData.Reverse();
+                }
+
+                wkb2 = wkb2.Slice(5);
+
+                GeometryType geometryType = GetGeometryType(geometryTypeData);
+                switch (geometryType)
+                {
+                    case GeometryType.MultiPoint:
+                    case GeometryType.MultiLineString:
+                    case GeometryType.MultiPolygon:
+                    case GeometryType.GeometryCollection:
+                        var cntSpan = wkb2.Slice(0, 4);
+                        wkb2 = wkb2.Slice(4);
+                        if (swapCurrent)
+                        {
+                            cntSpan.Reverse();
+                        }
+
+                        // still go through components, because they might have a different byte order.
+                        int geomCnt = Unsafe.ReadUnaligned<int>(ref cntSpan[0]);
+                        for (int i = 0; i < geomCnt; i++)
+                        {
+                            Core(ref wkb2);
+                        }
+
+                        return;
+                }
+
+                if (!swapCurrent)
+                {
+                    return;
+                }
+
+                switch (geometryType)
+                {
+                    case GeometryType.Point:
+                        wkb2.Slice(0, 8).Reverse();
+                        wkb2.Slice(8, 8).Reverse();
+                        return;
+
+                    case GeometryType.LineString:
+                    {
+                        var cntSpan = wkb2.Slice(0, 4);
+                        wkb2 = wkb2.Slice(4);
+                        cntSpan.Reverse();
+
+                        int ptCnt = Unsafe.ReadUnaligned<int>(ref cntSpan[0]);
+                        for (int i = 0; i < ptCnt; i++)
+                        {
+                            wkb2.Slice(0, 8).Reverse();
+                            wkb2.Slice(8, 8).Reverse();
+                            wkb2 = wkb2.Slice(16);
+                        }
+
+                        return;
+                    }
+
+                    case GeometryType.Polygon:
+                    {
+                        var cntSpan = wkb2.Slice(0, 4);
+                        wkb2 = wkb2.Slice(4);
+                        cntSpan.Reverse();
+                        int ringCnt = Unsafe.ReadUnaligned<int>(ref cntSpan[0]);
+                        for (int i = 0; i < ringCnt; i++)
+                        {
+                            cntSpan = wkb2.Slice(0, 4);
+                            wkb2 = wkb2.Slice(4);
+                            int ptCnt = Unsafe.ReadUnaligned<int>(ref cntSpan[0]);
+                            for (int j = 0; j < ptCnt; j++)
+                            {
+                                wkb2.Slice(0, 8).Reverse();
+                                wkb2.Slice(8, 8).Reverse();
+                                wkb2 = wkb2.Slice(16);
+                            }
+                        }
+
+                        return;
+                    }
+                }
+            }
         }
 
         internal static int GetLength(ReadOnlySpan<byte> wkb)
@@ -96,6 +195,9 @@ namespace NetTopologySuite.Optimized
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowNotSupportedExceptionForEndianness() => throw new NotSupportedException("Machine endianness needs to match WKB endianness for now... sorry.");
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentExceptionForBadByteOrder() => throw new ArgumentException("Only big-endian (0) or little-endian (1) byte orders are supported here.", "wkb");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowNotSupportedExceptionForBadDimension() => throw new NotSupportedException("Only the XY coordinate system is supported at this time, and no SRIDs.");
