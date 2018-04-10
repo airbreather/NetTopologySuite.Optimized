@@ -70,7 +70,7 @@ namespace NetTopologySuite.Optimized
             }
         }
 
-        public int GeomCount => Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(this.RawGeometry.Data.Slice(5)));
+        public int GeomCount => Unsafe.ReadUnaligned<int>(ref Unsafe.AsRef(this.RawGeometry.Data[5]));
 
         public RawGeometry GetGeom(int geomIndex)
         {

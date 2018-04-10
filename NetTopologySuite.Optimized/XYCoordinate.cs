@@ -75,25 +75,27 @@ namespace NetTopologySuite.Optimized
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint Rol(uint value, int count)
-            => (value << count) | (value >> (32 - count));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint QueueRound(uint hash, uint queuedValue)
         {
-            hash += queuedValue * Prime3;
-            return Rol(hash, 17) * Prime4;
+            unchecked
+            {
+                hash += queuedValue * Prime3;
+                return ((hash << 17) | (hash >> 15)) * Prime4;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint MixFinal(uint hash)
         {
-            hash ^= hash >> 15;
-            hash *= Prime2;
-            hash ^= hash >> 13;
-            hash *= Prime3;
-            hash ^= hash >> 16;
-            return hash;
+            unchecked
+            {
+                hash ^= hash >> 15;
+                hash *= Prime2;
+                hash ^= hash >> 13;
+                hash *= Prime3;
+                hash ^= hash >> 16;
+                return hash;
+            }
         }
 
         public override string ToString() => $"[X: {this.X}, Y: {this.Y}]";

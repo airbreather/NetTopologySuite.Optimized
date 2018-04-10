@@ -27,17 +27,16 @@ namespace NetTopologySuite.Optimized
             var pts = this.PointData.Slice(4);
             var len = pts.Length / 16;
             var seq = factory.Create(len, 2);
-            ref var ptsStart = ref MemoryMarshal.GetReference(pts);
             for (int i = 0, j = 0; i < len; i++, j += 16)
             {
-                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.X, Unsafe.ReadUnaligned<double>(ref Unsafe.AddByteOffset(ref ptsStart, new IntPtr(j + 0))));
-                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.Y, Unsafe.ReadUnaligned<double>(ref Unsafe.AddByteOffset(ref ptsStart, new IntPtr(j + 8))));
+                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.X, Unsafe.ReadUnaligned<double>(ref Unsafe.AsRef(pts[j + 0])));
+                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.Y, Unsafe.ReadUnaligned<double>(ref Unsafe.AsRef(pts[j + 8])));
             }
 
             return seq;
         }
 
-        public XYCoordinate GetCoordinate(int idx) => Unsafe.ReadUnaligned<XYCoordinate>(ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(this.PointData), new IntPtr(idx * 16 + 4)));
+        public XYCoordinate GetCoordinate(int idx) => Unsafe.ReadUnaligned<XYCoordinate>(ref Unsafe.AsRef(this.PointData[idx * 16 + 4]));
 
         public bool EqualsExact(RawCoordinateSequence other) => this.PointData.SequenceEqual(other.PointData);
 

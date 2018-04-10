@@ -41,7 +41,7 @@ namespace NetTopologySuite.Optimized
             }
         }
 
-        public int RingCount => Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(this.RawGeometry.Data.Slice(5)));
+        public int RingCount => Unsafe.ReadUnaligned<int>(ref Unsafe.AsRef(this.RawGeometry.Data[5]));
 
         public RawCoordinateSequence GetRing(int ringIndex)
         {

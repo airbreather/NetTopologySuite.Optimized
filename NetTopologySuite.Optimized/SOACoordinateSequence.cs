@@ -84,13 +84,13 @@ namespace NetTopologySuite.Optimized
 
         public void CopyTo(Span<double> outXs, Span<double> outYs)
         {
-            if ((outXs.Length < this.xs.Length) | (outYs.Length < this.ys.Length))
+            if ((outXs.Length != this.xs.Length) | (outYs.Length != this.ys.Length))
             {
                 ThrowArgumentExceptionForBadLength();
             }
 
-            this.xs.AsReadOnlySpan().CopyTo(outXs.Slice(0, this.xs.Length));
-            this.ys.AsReadOnlySpan().CopyTo(outYs.Slice(0, this.ys.Length));
+            this.xs.AsReadOnlySpan().CopyTo(outXs);
+            this.ys.AsReadOnlySpan().CopyTo(outYs);
         }
 
         public Envelope ExpandEnvelope(Envelope env)

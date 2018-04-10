@@ -29,7 +29,6 @@ namespace NetTopologySuite.Optimized.Algorithm
                 return 1;
             }
 
-            // Work around dotnet/roslyn#25118 by giving the compiler just enough of a hint
             Span<bool> includes = stackalloc bool[0];
             bool[] rentedBuffer = null;
             if (inputCoords.Length < 1024)

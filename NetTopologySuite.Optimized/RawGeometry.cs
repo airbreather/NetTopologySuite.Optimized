@@ -68,24 +68,24 @@ namespace NetTopologySuite.Optimized
                     geometryTypeData.Reverse();
                 }
 
-                wkb2 = wkb2.Slice(5);
-
                 GeometryType geometryType = GetGeometryType(geometryTypeData);
+
+                wkb2 = wkb2.Slice(5);
                 switch (geometryType)
                 {
                     case GeometryType.MultiPoint:
                     case GeometryType.MultiLineString:
                     case GeometryType.MultiPolygon:
                     case GeometryType.GeometryCollection:
-                        var cntSpan = wkb2.Slice(0, 4);
-                        wkb2 = wkb2.Slice(4);
                         if (swapCurrent)
                         {
-                            cntSpan.Reverse();
+                            wkb2.Slice(0, 4).Reverse();
                         }
 
                         // still go through components, because they might have a different byte order.
-                        int geomCnt = Unsafe.ReadUnaligned<int>(ref cntSpan[0]);
+                        int geomCnt = Unsafe.ReadUnaligned<int>(ref wkb2[0]);
+
+                        wkb2 = wkb2.Slice(4);
                         for (int i = 0; i < geomCnt; i++)
                         {
                             Core(ref wkb2);
@@ -107,12 +107,10 @@ namespace NetTopologySuite.Optimized
                         return;
 
                     case GeometryType.LineString:
-                    {
-                        var cntSpan = wkb2.Slice(0, 4);
-                        wkb2 = wkb2.Slice(4);
-                        cntSpan.Reverse();
+                        wkb2.Slice(0, 4).Reverse();
+                        int ptCnt = Unsafe.ReadUnaligned<int>(ref wkb2[0]);
 
-                        int ptCnt = Unsafe.ReadUnaligned<int>(ref cntSpan[0]);
+                        wkb2 = wkb2.Slice(4);
                         for (int i = 0; i < ptCnt; i++)
                         {
                             wkb2.Slice(0, 8).Reverse();
@@ -121,20 +119,19 @@ namespace NetTopologySuite.Optimized
                         }
 
                         return;
-                    }
 
                     case GeometryType.Polygon:
-                    {
-                        var cntSpan = wkb2.Slice(0, 4);
+                        wkb2.Slice(0, 4).Reverse();
+                        int ringCnt = Unsafe.ReadUnaligned<int>(ref wkb2[0]);
+
                         wkb2 = wkb2.Slice(4);
-                        cntSpan.Reverse();
-                        int ringCnt = Unsafe.ReadUnaligned<int>(ref cntSpan[0]);
                         for (int i = 0; i < ringCnt; i++)
                         {
-                            cntSpan = wkb2.Slice(0, 4);
+                            wkb2.Slice(0, 4).Reverse();
+                            int ringPtCnt = Unsafe.ReadUnaligned<int>(ref wkb2[0]);
+
                             wkb2 = wkb2.Slice(4);
-                            int ptCnt = Unsafe.ReadUnaligned<int>(ref cntSpan[0]);
-                            for (int j = 0; j < ptCnt; j++)
+                            for (int j = 0; j < ringPtCnt; j++)
                             {
                                 wkb2.Slice(0, 8).Reverse();
                                 wkb2.Slice(8, 8).Reverse();
@@ -143,7 +140,6 @@ namespace NetTopologySuite.Optimized
                         }
 
                         return;
-                    }
                 }
             }
         }
