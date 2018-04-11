@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 using GeoAPI.Geometries;
 
@@ -122,7 +123,7 @@ namespace NetTopologySuite.Optimized
             }
 
             Span<byte> dst = bytes.Slice(0, coords.Length * 8);
-            coords.AsBytes().CopyTo(dst);
+            MemoryMarshal.AsBytes(coords).CopyTo(dst);
             bytes = bytes.Slice(dst.Length);
         }
 

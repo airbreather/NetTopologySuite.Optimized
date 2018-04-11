@@ -89,8 +89,8 @@ namespace NetTopologySuite.Optimized
                 ThrowArgumentExceptionForBadLength();
             }
 
-            this.xs.AsReadOnlySpan().CopyTo(outXs);
-            this.ys.AsReadOnlySpan().CopyTo(outYs);
+            this.xs.CopyTo(outXs);
+            this.ys.CopyTo(outYs);
         }
 
         public Envelope ExpandEnvelope(Envelope env)

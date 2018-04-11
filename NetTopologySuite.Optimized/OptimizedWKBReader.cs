@@ -2,9 +2,8 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-using GeoAPI;
 using GeoAPI.Geometries;
-
+using NetTopologySuite.Geometries;
 using NetTopologySuite.Geometries.Implementation;
 using NetTopologySuite.IO;
 
@@ -20,7 +19,10 @@ namespace NetTopologySuite.Optimized
     {
         private readonly IGeometryFactory factory;
 
-        public OptimizedWKBReader() => this.factory = GeometryServiceProvider.Instance.CreateGeometryFactory();
+        public OptimizedWKBReader()
+            : this(GeometryFactory.Default)
+        {
+        }
 
         public OptimizedWKBReader(IGeometryFactory factory) => this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
 
@@ -30,9 +32,9 @@ namespace NetTopologySuite.Optimized
 
         private IGeometry Read(ref ReadOnlySpan<byte> bytes)
         {
-            if (Read<ByteOrder>(ref bytes) != ByteOrder.LittleEndian)
+            if ((unchecked((ByteOrder)(Read<byte>(ref bytes) & 1)) == ByteOrder.BigEndian) == BitConverter.IsLittleEndian)
             {
-                ThrowNotSupportedExceptionForBigEndian();
+                ThrowNotSupportedExceptionForEndianness();
             }
 
             uint packedTyp = Read<uint>(ref bytes);
@@ -45,9 +47,9 @@ namespace NetTopologySuite.Optimized
             int ordinate = Math.DivRem((int)packedTyp & 0xffff, 1000, out int type);
             switch (ordinate)
             {
-                case 1:
-                case 2:
-                case 3:
+                case 1: // XYZ
+                case 2: // XYM
+                case 3: // XYZM
                     ThrowNotSupportedExceptionForBadDimension();
                     break;
             }
@@ -82,22 +84,23 @@ namespace NetTopologySuite.Optimized
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowNotSupportedExceptionForBigEndian() => throw new NotSupportedException("Big-endian WKB not supported... yet.");
+        private static void ThrowNotSupportedExceptionForEndianness() =>
+            throw new NotSupportedException("Machine endianness needs to match WKB endianness for now... sorry.");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowNotSupportedExceptionForBadDimension() => throw new NotSupportedException("Only the XY coordinate system is supported at this time, and no SRIDs.");
+        private static void ThrowNotSupportedExceptionForBadDimension() =>
+            throw new NotSupportedException("Only the XY coordinate system is supported at this time, and no SRIDs.");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowNotSupportedExceptionForBadGeometryType() => throw new NotSupportedException("Unsupported geometry type");
+        private static void ThrowNotSupportedExceptionForBadGeometryType() =>
+            throw new NotSupportedException("Unsupported geometry type");
 
         private ILinearRing ReadLinearRing(ref ReadOnlySpan<byte> bytes) =>
             this.factory.CreateLinearRing(this.ReadCoordinateSequence(ref bytes));
 
-        private IPoint ReadPoint(ref ReadOnlySpan<byte> bytes) =>
-            this.factory.CreatePoint(this.ReadCoordinateSequence(ref bytes, 1));
+        private IPoint ReadPoint(ref ReadOnlySpan<byte> bytes) => this.factory.CreatePoint(this.ReadCoordinateSequence(ref bytes, 1));
 
-        private ILineString ReadLineString(ref ReadOnlySpan<byte> bytes) =>
-            this.factory.CreateLineString(this.ReadCoordinateSequence(ref bytes));
+        private ILineString ReadLineString(ref ReadOnlySpan<byte> bytes) => this.factory.CreateLineString(this.ReadCoordinateSequence(ref bytes));
 
         private IPolygon ReadPolygon(ref ReadOnlySpan<byte> bytes)
         {
@@ -122,17 +125,13 @@ namespace NetTopologySuite.Optimized
             return this.factory.CreatePolygon(shell, holes);
         }
 
-        private IMultiPoint ReadMultiPoint(ref ReadOnlySpan<byte> bytes) =>
-            this.factory.CreateMultiPoint(this.ReadTypedGeometries<IPoint>(ref bytes));
+        private IMultiPoint ReadMultiPoint(ref ReadOnlySpan<byte> bytes) => this.factory.CreateMultiPoint(this.ReadTypedGeometries<IPoint>(ref bytes));
 
-        private IMultiLineString ReadMultiLineString(ref ReadOnlySpan<byte> bytes) =>
-            this.factory.CreateMultiLineString(this.ReadTypedGeometries<ILineString>(ref bytes));
+        private IMultiLineString ReadMultiLineString(ref ReadOnlySpan<byte> bytes) => this.factory.CreateMultiLineString(this.ReadTypedGeometries<ILineString>(ref bytes));
 
-        private IMultiPolygon ReadMultiPolygon(ref ReadOnlySpan<byte> bytes) =>
-            this.factory.CreateMultiPolygon(this.ReadTypedGeometries<IPolygon>(ref bytes));
+        private IMultiPolygon ReadMultiPolygon(ref ReadOnlySpan<byte> bytes) => this.factory.CreateMultiPolygon(this.ReadTypedGeometries<IPolygon>(ref bytes));
 
-        private IGeometryCollection ReadGeometryCollection(ref ReadOnlySpan<byte> bytes) =>
-            this.factory.CreateGeometryCollection(this.ReadTypedGeometries<IGeometry>(ref bytes));
+        private IGeometryCollection ReadGeometryCollection(ref ReadOnlySpan<byte> bytes) => this.factory.CreateGeometryCollection(this.ReadTypedGeometries<IGeometry>(ref bytes));
 
         private TGeometry[] ReadTypedGeometries<TGeometry>(ref ReadOnlySpan<byte> bytes)
             where TGeometry : IGeometry
@@ -173,7 +172,7 @@ namespace NetTopologySuite.Optimized
         private static unsafe ICoordinateSequence ReadAOSCoordinateSequence(ref ReadOnlySpan<byte> bytes, int cnt)
         {
             PackedDoubleCoordinateSequence seq = new PackedDoubleCoordinateSequence(cnt, 2);
-            Span<byte> dst = seq.GetRawCoordinates().AsSpan().AsBytes();
+            Span<byte> dst = MemoryMarshal.AsBytes(seq.GetRawCoordinates().AsSpan());
             ReadOnlySpan<byte> src = bytes.Slice(0, dst.Length);
             bytes = bytes.Slice(src.Length);
             src.CopyTo(dst);
@@ -183,7 +182,7 @@ namespace NetTopologySuite.Optimized
         private static T Read<T>(ref ReadOnlySpan<byte> span)
             where T : struct
         {
-            T result = Unsafe.ReadUnaligned<T>(ref MemoryMarshal.GetReference(span));
+            T result = MemoryMarshal.Read<T>(span);
             span = span.Slice(Unsafe.SizeOf<T>());
             return result;
         }

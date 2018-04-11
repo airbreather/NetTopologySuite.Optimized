@@ -15,13 +15,12 @@ namespace NetTopologySuite.Optimized
                 ThrowArgumentExceptionForTooShortWKB();
             }
 
-            this.Data = data;
-
-            if ((BitConverter.IsLittleEndian && this.ByteOrder != ByteOrder.LittleEndian) ||
-                (!BitConverter.IsLittleEndian && this.ByteOrder != ByteOrder.BigEndian))
+            if (WkbByteOrderDiffersFromNative(data))
             {
                 ThrowNotSupportedExceptionForEndianness();
             }
+
+            this.Data = data;
         }
 
         public ByteOrder ByteOrder => (ByteOrder)this.Data[0];
@@ -35,18 +34,21 @@ namespace NetTopologySuite.Optimized
                 ThrowArgumentExceptionForTooShortWKB();
             }
 
-            uint packedTyp = Unsafe.ReadUnaligned<uint>(ref Unsafe.AsRef(wkb[1]));
-            if ((packedTyp & 0xE0000000) != 0)
+            uint packedTyp = MemoryMarshal.Read<uint>(wkb.Slice(1));
+            if ((packedTyp & 0b11100000000000000000000000000000) != 0)
             {
+                // first 3 most significant bits are "has Z", "has M", "has SRID", in that order.
+                // we're hyper-optimized for a very strict binary layout, so we can't support any of
+                // the extra stuff that one might find in EWKB.
                 ThrowNotSupportedExceptionForBadDimension();
             }
 
             int ordinate = Math.DivRem(unchecked((int)packedTyp) & 0xFFFF, 1000, out int type);
             switch (ordinate)
             {
-                case 1:
-                case 2:
-                case 3:
+                case 1: // XYZ
+                case 2: // XYM
+                case 3: // XYZM
                     ThrowNotSupportedExceptionForBadDimension();
                     break;
             }
@@ -60,15 +62,14 @@ namespace NetTopologySuite.Optimized
 
             void Core(ref Span<byte> wkb2)
             {
-                bool swapCurrent = (unchecked((ByteOrder)(wkb2[0] & 1)) == ByteOrder.LittleEndian) != BitConverter.IsLittleEndian;
-
-                var geometryTypeData = wkb2.Slice(1, 4);
+                bool swapCurrent = WkbByteOrderDiffersFromNative(wkb2);
                 if (swapCurrent)
                 {
-                    geometryTypeData.Reverse();
+                    wkb2[0] = unchecked((byte)(wkb2[0] ^ 1));
+                    wkb2.Slice(1, 4).Reverse();
                 }
 
-                GeometryType geometryType = GetGeometryType(geometryTypeData);
+                GeometryType geometryType = GetGeometryType(wkb2);
 
                 wkb2 = wkb2.Slice(5);
                 switch (geometryType)
@@ -83,7 +84,7 @@ namespace NetTopologySuite.Optimized
                         }
 
                         // still go through components, because they might have a different byte order.
-                        int geomCnt = Unsafe.ReadUnaligned<int>(ref wkb2[0]);
+                        int geomCnt = MemoryMarshal.Read<int>(wkb2);
 
                         wkb2 = wkb2.Slice(4);
                         for (int i = 0; i < geomCnt; i++)
@@ -108,7 +109,7 @@ namespace NetTopologySuite.Optimized
 
                     case GeometryType.LineString:
                         wkb2.Slice(0, 4).Reverse();
-                        int ptCnt = Unsafe.ReadUnaligned<int>(ref wkb2[0]);
+                        int ptCnt = MemoryMarshal.Read<int>(wkb2);
 
                         wkb2 = wkb2.Slice(4);
                         for (int i = 0; i < ptCnt; i++)
@@ -122,13 +123,13 @@ namespace NetTopologySuite.Optimized
 
                     case GeometryType.Polygon:
                         wkb2.Slice(0, 4).Reverse();
-                        int ringCnt = Unsafe.ReadUnaligned<int>(ref wkb2[0]);
+                        int ringCnt = MemoryMarshal.Read<int>(wkb2);
 
                         wkb2 = wkb2.Slice(4);
                         for (int i = 0; i < ringCnt; i++)
                         {
                             wkb2.Slice(0, 4).Reverse();
-                            int ringPtCnt = Unsafe.ReadUnaligned<int>(ref wkb2[0]);
+                            int ringPtCnt = MemoryMarshal.Read<int>(wkb2);
 
                             wkb2 = wkb2.Slice(4);
                             for (int j = 0; j < ringPtCnt; j++)
@@ -147,58 +148,70 @@ namespace NetTopologySuite.Optimized
         internal static int GetLength(ReadOnlySpan<byte> wkb)
         {
             ref var wkbStart = ref MemoryMarshal.GetReference(wkb);
+
+            // most things start with the forced 5 and then have a 4-byte integer after.
+            // everything else is fixed-length anyway.
+            int res = 9;
             switch (GetGeometryType(wkb))
             {
                 case GeometryType.Point:
-                    return 21;
+                    res = 21;
+                    break;
 
                 case GeometryType.LineString:
-                    return 9 + Unsafe.ReadUnaligned<int>(ref Unsafe.AddByteOffset(ref wkbStart, new IntPtr(5))) * 16;
+                    res += MemoryMarshal.Read<int>(wkb.Slice(5)) * 16;
+                    break;
 
                 case GeometryType.Polygon:
-                    int ringCnt = Unsafe.ReadUnaligned<int>(ref Unsafe.AddByteOffset(ref wkbStart, new IntPtr(5)));
-                    int off = 9;
-                    var rem1 = wkb.Slice(9);
+                    int ringCnt = MemoryMarshal.Read<int>(wkb.Slice(5));
                     for (int i = 0; i < ringCnt; i++)
                     {
-                        int ptCnt = Unsafe.ReadUnaligned<int>(ref Unsafe.AddByteOffset(ref wkbStart, new IntPtr(off)));
-                        off += ptCnt * 16 + 4;
+                        int ptCnt = MemoryMarshal.Read<int>(wkb.Slice(res));
+                        res += ptCnt * 16 + 4;
                     }
 
-                    return off;
+                    break;
 
                 case GeometryType.MultiPoint:
                 case GeometryType.MultiLineString:
                 case GeometryType.MultiPolygon:
                 case GeometryType.GeometryCollection:
-                    int cnt = Unsafe.ReadUnaligned<int>(ref Unsafe.AddByteOffset(ref wkbStart, new IntPtr(5)));
-                    var off2 = 9;
+                    int cnt = MemoryMarshal.Read<int>(wkb.Slice(5));
                     for (int i = 0; i < cnt; i++)
                     {
-                        off2 += GetLength(wkb.Slice(off2));
+                        res += GetLength(wkb.Slice(res));
                     }
 
-                    return off2;
+                    break;
 
                 default:
                     ThrowNotSupportedExceptionForBadGeometryType();
-                    return 0;
+                    break;
             }
+
+            return res;
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowArgumentExceptionForTooShortWKB() => throw new ArgumentException("No valid WKB is less than 5 bytes long.", "data");
+        private static bool WkbByteOrderDiffersFromNative(ReadOnlySpan<byte> wkb) => unchecked(((ByteOrder)(wkb[0] & 1)) == ByteOrder.BigEndian) == BitConverter.IsLittleEndian;
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowNotSupportedExceptionForEndianness() => throw new NotSupportedException("Machine endianness needs to match WKB endianness for now... sorry.");
+        private static void ThrowArgumentExceptionForTooShortWKB() =>
+            throw new ArgumentException("No valid WKB is less than 5 bytes long.", "data");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowArgumentExceptionForBadByteOrder() => throw new ArgumentException("Only big-endian (0) or little-endian (1) byte orders are supported here.", "wkb");
+        private static void ThrowNotSupportedExceptionForEndianness() =>
+            throw new NotSupportedException("Machine endianness needs to match WKB endianness for now... sorry.");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowNotSupportedExceptionForBadDimension() => throw new NotSupportedException("Only the XY coordinate system is supported at this time, and no SRIDs.");
+        private static void ThrowArgumentExceptionForBadByteOrder() =>
+            throw new ArgumentException("Only big-endian (0) or little-endian (1) byte orders are supported here.", "wkb");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowNotSupportedExceptionForBadGeometryType() => throw new NotSupportedException("Unsupported geometry type");
+        private static void ThrowNotSupportedExceptionForBadDimension() =>
+            throw new NotSupportedException("Only the XY coordinate system is supported at this time, and no SRIDs.");
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowNotSupportedExceptionForBadGeometryType() =>
+            throw new NotSupportedException("Unsupported geometry type");
     }
 }

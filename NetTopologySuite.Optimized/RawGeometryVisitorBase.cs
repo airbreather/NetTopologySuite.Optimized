@@ -58,6 +58,7 @@
                 case GeometryType.GeometryCollection:
                     RawGeometryCollection geometryCollection = default;
                     geometryCollection.RawGeometry = geometry;
+                    this.OnVisitRawGeometryCollection(geometryCollection);
                     VisitGeometryCollection(geometryCollection);
                     break;
             }
@@ -95,8 +96,6 @@
                         this.OnVisitRawHeterogeneousGeometryCollection(geometryCollection);
                         break;
                 }
-
-                this.OnVisitRawGeometryCollection(geometryCollection);
 
                 if (mode >= VisitMode.GeometryCollectionElements)
                 {

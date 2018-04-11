@@ -18,32 +18,33 @@ namespace NetTopologySuite.Optimized
             }
         }
 
-        public int PointCount => Unsafe.ReadUnaligned<int>(ref MemoryMarshal.GetReference(this.PointData));
+        public int PointCount => MemoryMarshal.Read<int>(this.PointData);
 
-        public ReadOnlySpan<XYCoordinate> NonPortableCoordinates => this.PointData.Slice(4).NonPortableCast<byte, XYCoordinate>();
+        public ReadOnlySpan<XYCoordinate> NonPortableCoordinates => MemoryMarshal.Cast<byte, XYCoordinate>(this.PointData.Slice(4));
 
         public GeoAPI.Geometries.ICoordinateSequence ToGeoAPI(GeoAPI.Geometries.ICoordinateSequenceFactory factory)
         {
             var pts = this.PointData.Slice(4);
             var len = pts.Length / 16;
             var seq = factory.Create(len, 2);
-            for (int i = 0, j = 0; i < len; i++, j += 16)
+            for (int i = 0; i < len; i++, pts = pts.Slice(16))
             {
-                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.X, Unsafe.ReadUnaligned<double>(ref Unsafe.AsRef(pts[j + 0])));
-                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.Y, Unsafe.ReadUnaligned<double>(ref Unsafe.AsRef(pts[j + 8])));
+                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.X, MemoryMarshal.Read<double>(pts));
+                seq.SetOrdinate(i, GeoAPI.Geometries.Ordinate.Y, MemoryMarshal.Read<double>(pts.Slice(8)));
             }
 
             return seq;
         }
 
-        public XYCoordinate GetCoordinate(int idx) => Unsafe.ReadUnaligned<XYCoordinate>(ref Unsafe.AsRef(this.PointData[idx * 16 + 4]));
+        public XYCoordinate GetCoordinate(int idx) => MemoryMarshal.Read<XYCoordinate>(this.PointData.Slice(idx * 16 + 4));
 
         public bool EqualsExact(RawCoordinateSequence other) => this.PointData.SequenceEqual(other.PointData);
 
         public override string ToString() => $"[PointCount = {this.PointCount}]";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowArgumentExceptionForInconsistentLengths() => throw new ArgumentException("Input data length is inconsistent with claimed point count.", "pointData");
+        private static void ThrowArgumentExceptionForInconsistentLengths() =>
+            throw new ArgumentException("Input data length is inconsistent with claimed point count.", "pointData");
 
         public Enumerator GetEnumerator() => new Enumerator(this);
 
@@ -68,7 +69,7 @@ namespace NetTopologySuite.Optimized
                     return false;
                 }
 
-                this.current = Unsafe.ReadUnaligned<XYCoordinate>(ref MemoryMarshal.GetReference(this.rem));
+                this.current = MemoryMarshal.Read<XYCoordinate>(this.rem);
                 this.rem = this.rem.Slice(16);
                 return true;
             }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NetTopologySuite.Optimized
 {
@@ -22,11 +23,11 @@ namespace NetTopologySuite.Optimized
             this.RawGeometry = rawGeometry;
         }
 
-        public double X => Unsafe.ReadUnaligned<double>(ref Unsafe.AsRef(this.RawGeometry.Data[5]));
+        public double X => MemoryMarshal.Read<double>(this.RawGeometry.Data.Slice(5));
 
-        public double Y => Unsafe.ReadUnaligned<double>(ref Unsafe.AsRef(this.RawGeometry.Data[13]));
+        public double Y => MemoryMarshal.Read<double>(this.RawGeometry.Data.Slice(13));
 
-        public XYCoordinate CoordinateValue => Unsafe.ReadUnaligned<XYCoordinate>(ref Unsafe.AsRef(this.RawGeometry.Data[5]));
+        public XYCoordinate CoordinateValue => MemoryMarshal.Read<XYCoordinate>(this.RawGeometry.Data.Slice(5));
 
         public GeoAPI.Geometries.IPoint ToGeoAPI(GeoAPI.Geometries.IGeometryFactory factory) => factory.CreatePoint(this.CoordinateValue.ToGeoAPI());
 
@@ -35,9 +36,11 @@ namespace NetTopologySuite.Optimized
         public override string ToString() => $"[X: {this.X}, Y: {this.Y}]";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowArgumentExceptionForNonPoint() => throw new ArgumentException("GeometryType must be Point.", "rawGeometry");
+        private static void ThrowArgumentExceptionForNonPoint() =>
+            throw new ArgumentException("GeometryType must be Point.", "rawGeometry");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowArgumentExceptionForBadLength() => throw new ArgumentException("Point geometries are always exactly 21 bytes.", "rawGeometry");
+        private static void ThrowArgumentExceptionForBadLength() =>
+            throw new ArgumentException("Point geometries are always exactly 21 bytes.", "rawGeometry");
     }
 }

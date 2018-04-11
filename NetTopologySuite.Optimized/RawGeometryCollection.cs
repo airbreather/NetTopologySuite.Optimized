@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace NetTopologySuite.Optimized
 {
@@ -87,9 +86,10 @@ namespace NetTopologySuite.Optimized
 
         public GeoAPI.Geometries.IGeometryCollection ToGeoAPI(GeoAPI.Geometries.IGeometryFactory factory)
         {
+            GeometryType myGeometryType = this.RawGeometry.GeometryType;
             int len = this.GeomCount;
             GeoAPI.Geometries.IGeometry[] geoms = null;
-            switch (this.RawGeometry.GeometryType)
+            switch (myGeometryType)
             {
                 case GeometryType.MultiPoint:
                     geoms = new GeoAPI.Geometries.IPoint[len];
@@ -118,7 +118,7 @@ namespace NetTopologySuite.Optimized
                 RawGeometry cur = default;
                 cur.Data = rem.Slice(0, RawGeometry.GetLength(rem));
                 rem = rem.Slice(cur.Data.Length);
-                switch (this.RawGeometry.GeometryType)
+                switch (myGeometryType)
                 {
                     case GeometryType.MultiPoint:
                         RawPoint pt = default;
@@ -176,7 +176,7 @@ namespace NetTopologySuite.Optimized
                 }
             }
 
-            switch (this.RawGeometry.GeometryType)
+            switch (myGeometryType)
             {
                 case GeometryType.MultiPoint:
                     return factory.CreateMultiPoint((GeoAPI.Geometries.IPoint[])geoms);
@@ -192,24 +192,56 @@ namespace NetTopologySuite.Optimized
             }
         }
 
-        public bool EqualsExact(RawGeometryCollection other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
+        public bool EqualsExact(RawGeometryCollection other)
+        {
+            // don't just check the .Slice(5)
+            if (this.GeomCount != other.GeomCount)
+            {
+                return false;
+            }
+
+            var myEnumer = this.GetEnumerator();
+            var otherEnumer = other.GetEnumerator();
+            while (myEnumer.MoveNext())
+            {
+                // lengths pre-validated, so no need to check return
+                otherEnumer.MoveNext();
+
+                var myCur = myEnumer.Current.Data;
+                var otherCur = otherEnumer.Current.Data;
+
+                if (RawGeometry.GetGeometryType(myCur) != RawGeometry.GetGeometryType(otherCur) ||
+                    !myCur.Slice(5).SequenceEqual(otherCur.Slice(5)))
+                {
+                    return false;
+                }
+            }
+
+            // lengths pre-validated, so no need to check otherEnumer.MoveNext()
+            return true;
+        }
 
         public override string ToString() => $"[GeomCount = {this.GeomCount}]";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowArgumentExceptionForNonGeometryCollection() => throw new ArgumentException("GeometryType must be a geometry collection.", "rawGeometry");
+        private static void ThrowArgumentExceptionForNonGeometryCollection() =>
+            throw new ArgumentException("GeometryType must be a geometry collection.", "rawGeometry");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowNotSupportedExceptionForUnrecognizedChild() => throw new NotSupportedException("Child GeometryType is not supported");
+        private static void ThrowNotSupportedExceptionForUnrecognizedChild() =>
+            throw new NotSupportedException("Child GeometryType is not supported");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowArgumentExceptionForNegativeGeomCount() => throw new ArgumentException("Geom count cannot be negative", "rawGeometry");
+        private static void ThrowArgumentExceptionForNegativeGeomCount() =>
+            throw new ArgumentException("Geom count cannot be negative", "rawGeometry");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowArgumentExceptionForExcessRemainder() => throw new ArgumentException("Data is janky...", "rawGeometry");
+        private static void ThrowArgumentExceptionForExcessRemainder() =>
+            throw new ArgumentException("Data is janky...", "rawGeometry");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowArgumentExceptionForUnclosedRing(int ringIndex) => throw new ArgumentException($"Ring {ringIndex} is not closed.", "rawGeometry");
+        private static void ThrowArgumentExceptionForUnclosedRing(int ringIndex) =>
+            throw new ArgumentException($"Ring {ringIndex} is not closed.", "rawGeometry");
 
         public Enumerator GetEnumerator() => new Enumerator(this);
 

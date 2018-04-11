@@ -41,6 +41,7 @@ namespace NetTopologySuite.Optimized
         public override string ToString() => $"[Coordinates = {this.Coordinates.ToString()}]";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowArgumentExceptionForNonLineString() => throw new ArgumentException("GeometryType must be LineString.", "rawGeometry");
+        private static void ThrowArgumentExceptionForNonLineString() =>
+            throw new ArgumentException("GeometryType must be LineString.", "rawGeometry");
     }
 }
