@@ -35,7 +35,7 @@ namespace NetTopologySuite.Optimized
             }
 
             uint packedTyp = MemoryMarshal.Read<uint>(wkb.Slice(1));
-            if ((packedTyp & 0b11100000000000000000000000000000) != 0)
+            if ((packedTyp & 0b1110_0000_0000_0000_0000_0000_0000_0000) != 0)
             {
                 // first 3 most significant bits are "has Z", "has M", "has SRID", in that order.
                 // we're hyper-optimized for a very strict binary layout, so we can't support any of
