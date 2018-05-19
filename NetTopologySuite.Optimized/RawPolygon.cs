@@ -114,7 +114,11 @@ namespace NetTopologySuite.Optimized
 
             private RawCoordinateSequence current;
 
-            internal Enumerator(RawPolygon poly) => this.rem = poly.RawGeometry.Data.Slice(9);
+            internal Enumerator(RawPolygon poly)
+            {
+                this.rem = poly.RawGeometry.Data.Slice(9);
+                this.current = default;
+            }
 
             public RawCoordinateSequence Current =>
                 this.current;

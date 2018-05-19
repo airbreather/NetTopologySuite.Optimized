@@ -251,7 +251,11 @@ namespace NetTopologySuite.Optimized
 
             private RawGeometry current;
 
-            internal Enumerator(RawGeometryCollection coll) => this.rem = coll.RawGeometry.Data.Slice(9);
+            internal Enumerator(RawGeometryCollection coll)
+            {
+                this.rem = coll.RawGeometry.Data.Slice(9);
+                this.current = default;
+            }
 
             public RawGeometry Current => this.current;
 

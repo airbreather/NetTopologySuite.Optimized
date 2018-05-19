@@ -5,14 +5,15 @@
     <TargetFrameworks>netcoreapp2.1;net471</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <WarningsAsErrors>$(WarningsAsErrors),NU1603</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Name="NetTopologySuite.Optimized" Include="..\NetTopologySuite.Optimized\NetTopologySuite.Optimized.csproj" />
 
-    <PackageReference Include="BenchmarkDotNet" Version="0.10.13" />
-    <PackageReference Include="System.Memory" Version="4.5.0-preview2-26406-04" />
-    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0-preview2-26406-04" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.10.14" />
+    <PackageReference Include="System.Memory" Version="4.5.0-rc1" />
+    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0-rc1" />
   </ItemGroup>
 
 </Project>
