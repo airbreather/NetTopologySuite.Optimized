@@ -6,7 +6,7 @@ using System.Text;
 
 namespace NetTopologySuite.Optimized
 {
-    public static class OptimizedWKTWriter
+    public static class WKTRawWriter
     {
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -43,12 +43,6 @@ namespace NetTopologySuite.Optimized
                     WritePolygon(polygon, writer);
                     break;
 
-                case GeometryType.GeometryCollection:
-                    RawGeometryCollection collection1 = default;
-                    collection1.RawGeometry = geometry;
-                    WriteGeometryCollection(collection1, writer);
-                    break;
-
                 case GeometryType.MultiPoint:
                     RawGeometryCollection collection2 = default;
                     collection2.RawGeometry = geometry;
@@ -65,6 +59,12 @@ namespace NetTopologySuite.Optimized
                     RawGeometryCollection collection4 = default;
                     collection4.RawGeometry = geometry;
                     WriteMultiPolygon(collection4, writer);
+                    break;
+
+                case GeometryType.GeometryCollection:
+                    RawGeometryCollection collection1 = default;
+                    collection1.RawGeometry = geometry;
+                    WriteGeometryCollection(collection1, writer);
                     break;
 
                 default:

@@ -77,7 +77,7 @@ namespace NetTopologySuite.Optimized.Tests
         {
             IGeometry geom = new WKTReader().Read(expected);
             RawGeometry raw = new RawGeometry(geom.AsBinary());
-            string actual = OptimizedWKTWriter.Write(raw);
+            string actual = WKTRawWriter.Write(raw);
             Assert.Equal(expected, actual);
         }
     }
