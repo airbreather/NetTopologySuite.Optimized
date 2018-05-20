@@ -44,27 +44,27 @@ namespace NetTopologySuite.Optimized
                     break;
 
                 case GeometryType.MultiPoint:
-                    RawGeometryCollection collection2 = default;
-                    collection2.RawGeometry = geometry;
-                    WriteMultiPoint(collection2, writer);
+                    RawGeometryCollection collection1 = default;
+                    collection1.RawGeometry = geometry;
+                    WriteMultiPoint(collection1, writer);
                     break;
 
                 case GeometryType.MultiLineString:
-                    RawGeometryCollection collection3 = default;
-                    collection3.RawGeometry = geometry;
-                    WriteMultiLineString(collection3, writer);
+                    RawGeometryCollection collection2 = default;
+                    collection2.RawGeometry = geometry;
+                    WriteMultiLineString(collection2, writer);
                     break;
 
                 case GeometryType.MultiPolygon:
-                    RawGeometryCollection collection4 = default;
-                    collection4.RawGeometry = geometry;
-                    WriteMultiPolygon(collection4, writer);
+                    RawGeometryCollection collection3 = default;
+                    collection3.RawGeometry = geometry;
+                    WriteMultiPolygon(collection3, writer);
                     break;
 
                 case GeometryType.GeometryCollection:
-                    RawGeometryCollection collection1 = default;
-                    collection1.RawGeometry = geometry;
-                    WriteGeometryCollection(collection1, writer);
+                    RawGeometryCollection collection4 = default;
+                    collection4.RawGeometry = geometry;
+                    WriteGeometryCollection(collection4, writer);
                     break;
 
                 default:
