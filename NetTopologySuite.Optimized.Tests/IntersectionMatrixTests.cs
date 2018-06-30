@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using Xunit;
 
-namespace NetTopologySuite.Geography.Tests
+namespace NetTopologySuite.Optimized.Tests
 {
     public sealed class RelateMatrixTests
     {

@@ -1,4 +1,4 @@
-﻿namespace NetTopologySuite
+﻿namespace NetTopologySuite.Optimized
 {
     public enum IntersectionMatrixDimension : byte
     {

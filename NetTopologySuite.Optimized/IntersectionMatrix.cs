@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace NetTopologySuite
+namespace NetTopologySuite.Optimized
 {
     /// <summary>
     /// A DE-9IM matrix that represents the relationship between two geographies or geometries.
@@ -219,7 +219,6 @@ namespace NetTopologySuite
                 throw new ArgumentException("Must have room for exactly 9 characters.", nameof(span));
             }
 
-            ReadOnlySpan<char> dims = stackalloc char[] { 'F', '0', '1', '2' };
             span[0] = CharOf(this.InteriorInterior);
             span[1] = CharOf(this.InteriorBoundary);
             span[2] = CharOf(this.InteriorExterior);
