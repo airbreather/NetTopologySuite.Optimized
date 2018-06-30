@@ -7,6 +7,16 @@ namespace NetTopologySuite.Optimized.Tests
 {
     public sealed class RelateMatrixTests
     {
+        private static readonly Dictionary<char, IntersectionMatrixDimension[]> LegalValuesByPatternChar = new Dictionary<char, IntersectionMatrixDimension[]>
+        {
+            ['0'] = new[] { IntersectionMatrixDimension.Dim0 },
+            ['1'] = new[] { IntersectionMatrixDimension.Dim1 },
+            ['2'] = new[] { IntersectionMatrixDimension.Dim2 },
+            ['F'] = new[] { IntersectionMatrixDimension.DimF },
+            ['T'] = new[] { IntersectionMatrixDimension.Dim0, IntersectionMatrixDimension.Dim1, IntersectionMatrixDimension.Dim2 },
+            ['*'] = new[] { IntersectionMatrixDimension.Dim0, IntersectionMatrixDimension.Dim1, IntersectionMatrixDimension.Dim2, IntersectionMatrixDimension.DimF },
+        };
+
         [Fact]
         public void RoundTripTest()
         {
@@ -126,15 +136,15 @@ namespace NetTopologySuite.Optimized.Tests
                 result.Clear();
             }
 
-            var d0Values = IntersectionMatrix.LegalValuesByPatternChar[pattern[0]];
-            var d1Values = IntersectionMatrix.LegalValuesByPatternChar[pattern[1]];
-            var d2Values = IntersectionMatrix.LegalValuesByPatternChar[pattern[2]];
-            var d3Values = IntersectionMatrix.LegalValuesByPatternChar[pattern[3]];
-            var d4Values = IntersectionMatrix.LegalValuesByPatternChar[pattern[4]];
-            var d5Values = IntersectionMatrix.LegalValuesByPatternChar[pattern[5]];
-            var d6Values = IntersectionMatrix.LegalValuesByPatternChar[pattern[6]];
-            var d7Values = IntersectionMatrix.LegalValuesByPatternChar[pattern[7]];
-            var d8Values = IntersectionMatrix.LegalValuesByPatternChar[pattern[8]];
+            var d0Values = LegalValuesByPatternChar[pattern[0]];
+            var d1Values = LegalValuesByPatternChar[pattern[1]];
+            var d2Values = LegalValuesByPatternChar[pattern[2]];
+            var d3Values = LegalValuesByPatternChar[pattern[3]];
+            var d4Values = LegalValuesByPatternChar[pattern[4]];
+            var d5Values = LegalValuesByPatternChar[pattern[5]];
+            var d6Values = LegalValuesByPatternChar[pattern[6]];
+            var d7Values = LegalValuesByPatternChar[pattern[7]];
+            var d8Values = LegalValuesByPatternChar[pattern[8]];
 
             foreach (var d0 in d0Values)
             {

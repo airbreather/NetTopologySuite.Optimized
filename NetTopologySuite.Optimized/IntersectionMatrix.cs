@@ -11,16 +11,6 @@ namespace NetTopologySuite.Optimized
     [StructLayout(LayoutKind.Explicit)]
     public readonly struct IntersectionMatrix : IEquatable<IntersectionMatrix>
     {
-        internal static readonly Dictionary<char, IntersectionMatrixDimension[]> LegalValuesByPatternChar = new Dictionary<char, IntersectionMatrixDimension[]>
-        {
-            ['0'] = new[] { IntersectionMatrixDimension.Dim0 },
-            ['1'] = new[] { IntersectionMatrixDimension.Dim1 },
-            ['2'] = new[] { IntersectionMatrixDimension.Dim2 },
-            ['F'] = new[] { IntersectionMatrixDimension.DimF },
-            ['T'] = new[] { IntersectionMatrixDimension.Dim0, IntersectionMatrixDimension.Dim1, IntersectionMatrixDimension.Dim2 },
-            ['*'] = new[] { IntersectionMatrixDimension.Dim0, IntersectionMatrixDimension.Dim1, IntersectionMatrixDimension.Dim2, IntersectionMatrixDimension.DimF },
-        };
-
         private const int InteriorBits = 0;
 
         private const int BoundaryBits = 2;
