@@ -7,7 +7,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetTopologySuite.Optimized"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetTopologySuite.Optimized.Tests", "NetTopologySuite.Optimized.Tests\NetTopologySuite.Optimized.Tests.csproj", "{C25AFB43-3818-482E-8749-D179C2E5B39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetTopologySuite.Optimized.Bench", "NetTopologySuite.Optimized.Bench\NetTopologySuite.Optimized.Bench.csproj", "{31B9C59F-CD2C-4707-A3CF-BC11187D28C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetTopologySuite.Optimized.Bench", "NetTopologySuite.Optimized.Bench\NetTopologySuite.Optimized.Bench.csproj", "{31B9C59F-CD2C-4707-A3CF-BC11187D28C4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7641CBBF-6A85-47BA-8CD1-1028B22D64CD}"
+	ProjectSection(SolutionItems) = preProject
+		NuGet.Config = NuGet.Config
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
