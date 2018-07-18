@@ -44,14 +44,14 @@ namespace NetTopologySuite.Optimized
             y = this.Y;
         }
 
-        public static bool operator ==(XYCoordinate first, XYCoordinate second) => first.Equals(second);
-        public static bool operator !=(XYCoordinate first, XYCoordinate second) => !first.Equals(second);
+        public static bool operator ==(XYCoordinate first, XYCoordinate second) => first.X == second.X && first.Y == second.Y;
+        public static bool operator !=(XYCoordinate first, XYCoordinate second) => first.X != second.X || first.Y != second.Y;
 
         public GeoAPI.Geometries.Coordinate ToGeoAPI() => new GeoAPI.Geometries.Coordinate(this.X, this.Y);
 
         public override bool Equals(object obj) => obj is XYCoordinate other && this.Equals(other);
 
-        public bool Equals(XYCoordinate other) => this.X == other.X && this.Y == other.Y;
+        public bool Equals(XYCoordinate other) => this.X.Equals(other.X) && this.Y.Equals(other.Y);
 
         public override int GetHashCode()
         {
