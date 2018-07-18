@@ -29,7 +29,7 @@ namespace NetTopologySuite.Optimized
 
         public XYCoordinate CoordinateValue => MemoryMarshal.Read<XYCoordinate>(this.RawGeometry.Data.Slice(5));
 
-        public GeoAPI.Geometries.IPoint ToGeoAPI(GeoAPI.Geometries.IGeometryFactory factory) => factory.CreatePoint(this.CoordinateValue.ToGeoAPI());
+        public GeoAPI.Geometries.IPoint ToGeoAPI(GeoAPI.Geometries.IGeometryFactory factory) => factory.CreatePoint(this.CoordinateValue.CopyToGeoAPI());
 
         public bool EqualsExact(RawPoint other) => this.RawGeometry.Data.Slice(5).SequenceEqual(other.RawGeometry.Data.Slice(5));
 

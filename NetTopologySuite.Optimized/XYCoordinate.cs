@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -47,7 +48,18 @@ namespace NetTopologySuite.Optimized
         public static bool operator ==(XYCoordinate first, XYCoordinate second) => first.X == second.X && first.Y == second.Y;
         public static bool operator !=(XYCoordinate first, XYCoordinate second) => first.X != second.X || first.Y != second.Y;
 
-        public GeoAPI.Geometries.Coordinate ToGeoAPI() => new GeoAPI.Geometries.Coordinate(this.X, this.Y);
+        public GeoAPI.Geometries.Coordinate CopyToGeoAPI(GeoAPI.Geometries.Coordinate coord = null)
+        {
+            if (coord is null)
+            {
+                coord = new GeoAPI.Geometries.Coordinate();
+            }
+
+            coord.X = this.X;
+            coord.Y = this.Y;
+            coord.Z = GeoAPI.Geometries.Coordinate.NullOrdinate;
+            return coord;
+        }
 
         public override bool Equals(object obj) => obj is XYCoordinate other && this.Equals(other);
 
@@ -98,6 +110,25 @@ namespace NetTopologySuite.Optimized
             }
         }
 
-        public override string ToString() => $"[X: {this.X}, Y: {this.Y}]";
+        public override string ToString()
+        {
+            ReadOnlySpan<char> xStr = this.X.ToRoundTripString(CultureInfo.InvariantCulture).AsSpan();
+            ReadOnlySpan<char> yStr = this.Y.ToRoundTripString(CultureInfo.InvariantCulture).AsSpan();
+            string result = new string(' ', 4 + xStr.Length + yStr.Length);
+            unsafe
+            {
+                fixed (char* c = result)
+                {
+                    Span<char> chars = new Span<char>(c, result.Length);
+                    chars[0] = '(';
+                    xStr.CopyTo(chars.Slice(1, xStr.Length));
+                    chars[xStr.Length + 1] = ',';
+                    yStr.CopyTo(chars.Slice(xStr.Length + 3, yStr.Length));
+                    chars[chars.Length - 1] = ')';
+                }
+            }
+
+            return result;
+        }
     }
 }

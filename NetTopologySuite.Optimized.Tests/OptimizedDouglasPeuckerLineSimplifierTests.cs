@@ -33,7 +33,7 @@ namespace NetTopologySuite.Optimized.Tests
             int sz = OptimizedDouglasPeuckerLineSimplifier.Simplify(input, actual, distanceTolerance);
             Array.Resize(ref actual, sz);
 
-            GeoAPI.Geometries.Coordinate[] nts = Array.ConvertAll(input, c => c.ToGeoAPI());
+            GeoAPI.Geometries.Coordinate[] nts = Array.ConvertAll(input, c => c.CopyToGeoAPI());
             if (nts.Length != 0)
             {
                 nts = DouglasPeuckerLineSimplifier.Simplify(nts, distanceTolerance);
