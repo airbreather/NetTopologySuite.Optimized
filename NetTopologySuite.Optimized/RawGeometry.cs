@@ -143,8 +143,6 @@ namespace NetTopologySuite.Optimized
 
         internal static int GetLength(ReadOnlySpan<byte> wkb)
         {
-            ref var wkbStart = ref MemoryMarshal.GetReference(wkb);
-
             // most things start with the forced 5 and then have a 4-byte integer after.
             // everything else is fixed-length anyway.
             int res = 9;
