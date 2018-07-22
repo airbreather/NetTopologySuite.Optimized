@@ -125,16 +125,9 @@ namespace NetTopologySuite.Optimized.Tests
             Assert.Throws<FormatException>(() => IntersectionMatrix.Parse(text));
         }
 
-        private static List<IntersectionMatrix> GenerateAllMatchingValues(ReadOnlySpan<char> pattern, List<IntersectionMatrix> result = null)
+        private static List<IntersectionMatrix> GenerateAllMatchingValues(ReadOnlySpan<char> pattern)
         {
-            if (result == null)
-            {
-                result = new List<IntersectionMatrix>(262144);
-            }
-            else
-            {
-                result.Clear();
-            }
+            var result = new List<IntersectionMatrix>(262144);
 
             var d0Values = LegalValuesByPatternChar[pattern[0]];
             var d1Values = LegalValuesByPatternChar[pattern[1]];
