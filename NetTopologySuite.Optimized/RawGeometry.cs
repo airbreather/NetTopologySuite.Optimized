@@ -56,92 +56,88 @@ namespace NetTopologySuite.Optimized
             return (GeometryType)type;
         }
 
-        public static void SwapToNativeByteOrderIfNeeded(Span<byte> wkb)
+        public static void SwapToNativeByteOrderIfNeeded(Span<byte> wkb) => SwapToNativeByteOrderIfNeededCore(ref wkb);
+        private static void SwapToNativeByteOrderIfNeededCore(ref Span<byte> wkb)
         {
-            Core(ref wkb);
-
-            void Core(ref Span<byte> wkb2)
+            bool swapCurrent = WkbByteOrderDiffersFromNative(wkb);
+            if (swapCurrent)
             {
-                bool swapCurrent = WkbByteOrderDiffersFromNative(wkb2);
-                if (swapCurrent)
-                {
-                    wkb2[0] = unchecked((byte)(wkb2[0] ^ 1));
-                    wkb2.Slice(1, 4).Reverse();
-                }
+                wkb[0] = unchecked((byte)(wkb[0] ^ 1));
+                wkb.Slice(1, 4).Reverse();
+            }
 
-                GeometryType geometryType = GetGeometryType(wkb2);
+            GeometryType geometryType = GetGeometryType(wkb);
 
-                wkb2 = wkb2.Slice(5);
-                switch (geometryType)
-                {
-                    case GeometryType.MultiPoint:
-                    case GeometryType.MultiLineString:
-                    case GeometryType.MultiPolygon:
-                    case GeometryType.GeometryCollection:
-                        if (swapCurrent)
-                        {
-                            wkb2.Slice(0, 4).Reverse();
-                        }
+            wkb = wkb.Slice(5);
+            switch (geometryType)
+            {
+                case GeometryType.MultiPoint:
+                case GeometryType.MultiLineString:
+                case GeometryType.MultiPolygon:
+                case GeometryType.GeometryCollection:
+                    if (swapCurrent)
+                    {
+                        wkb.Slice(0, 4).Reverse();
+                    }
 
-                        // still go through components, because they might have a different byte order.
-                        int geomCnt = MemoryMarshal.Read<int>(wkb2);
+                    // still go through components, because they might have a different byte order.
+                    int geomCnt = MemoryMarshal.Read<int>(wkb);
 
-                        wkb2 = wkb2.Slice(4);
-                        for (int i = 0; i < geomCnt; i++)
-                        {
-                            Core(ref wkb2);
-                        }
+                    wkb = wkb.Slice(4);
+                    for (int i = 0; i < geomCnt; i++)
+                    {
+                        SwapToNativeByteOrderIfNeededCore(ref wkb);
+                    }
 
-                        return;
-                }
-
-                if (!swapCurrent)
-                {
                     return;
-                }
+            }
 
-                switch (geometryType)
-                {
-                    case GeometryType.Point:
-                        wkb2.Slice(0, 8).Reverse();
-                        wkb2.Slice(8, 8).Reverse();
-                        return;
+            if (!swapCurrent)
+            {
+                return;
+            }
 
-                    case GeometryType.LineString:
-                        wkb2.Slice(0, 4).Reverse();
-                        int ptCnt = MemoryMarshal.Read<int>(wkb2);
+            switch (geometryType)
+            {
+                case GeometryType.Point:
+                    wkb.Slice(0, 8).Reverse();
+                    wkb.Slice(8, 8).Reverse();
+                    return;
 
-                        wkb2 = wkb2.Slice(4);
-                        for (int i = 0; i < ptCnt; i++)
+                case GeometryType.LineString:
+                    wkb.Slice(0, 4).Reverse();
+                    int ptCnt = MemoryMarshal.Read<int>(wkb);
+
+                    wkb = wkb.Slice(4);
+                    for (int i = 0; i < ptCnt; i++)
+                    {
+                        wkb.Slice(0, 8).Reverse();
+                        wkb.Slice(8, 8).Reverse();
+                        wkb = wkb.Slice(16);
+                    }
+
+                    return;
+
+                case GeometryType.Polygon:
+                    wkb.Slice(0, 4).Reverse();
+                    int ringCnt = MemoryMarshal.Read<int>(wkb);
+
+                    wkb = wkb.Slice(4);
+                    for (int i = 0; i < ringCnt; i++)
+                    {
+                        wkb.Slice(0, 4).Reverse();
+                        int ringPtCnt = MemoryMarshal.Read<int>(wkb);
+
+                        wkb = wkb.Slice(4);
+                        for (int j = 0; j < ringPtCnt; j++)
                         {
-                            wkb2.Slice(0, 8).Reverse();
-                            wkb2.Slice(8, 8).Reverse();
-                            wkb2 = wkb2.Slice(16);
+                            wkb.Slice(0, 8).Reverse();
+                            wkb.Slice(8, 8).Reverse();
+                            wkb = wkb.Slice(16);
                         }
+                    }
 
-                        return;
-
-                    case GeometryType.Polygon:
-                        wkb2.Slice(0, 4).Reverse();
-                        int ringCnt = MemoryMarshal.Read<int>(wkb2);
-
-                        wkb2 = wkb2.Slice(4);
-                        for (int i = 0; i < ringCnt; i++)
-                        {
-                            wkb2.Slice(0, 4).Reverse();
-                            int ringPtCnt = MemoryMarshal.Read<int>(wkb2);
-
-                            wkb2 = wkb2.Slice(4);
-                            for (int j = 0; j < ringPtCnt; j++)
-                            {
-                                wkb2.Slice(0, 8).Reverse();
-                                wkb2.Slice(8, 8).Reverse();
-                                wkb2 = wkb2.Slice(16);
-                            }
-                        }
-
-                        return;
-                }
+                    return;
             }
         }
 
