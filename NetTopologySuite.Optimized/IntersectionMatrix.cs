@@ -24,19 +24,19 @@ namespace NetTopologySuite.Optimized
         private const int ExteriorMask = 3 << ExteriorBits;
 
         [FieldOffset(0)]
-        private readonly byte booleanPatternBits;
-
-        [FieldOffset(1)]
-        private readonly byte interiorBits;
-
-        [FieldOffset(2)]
-        private readonly byte boundaryBits;
-
-        [FieldOffset(3)]
-        private readonly byte exteriorBits;
+        private readonly int packed;
 
         [FieldOffset(0)]
-        private readonly int packed;
+        private readonly byte interiorBits;
+
+        [FieldOffset(1)]
+        private readonly byte boundaryBits;
+
+        [FieldOffset(2)]
+        private readonly byte exteriorBits;
+
+        [FieldOffset(3)]
+        private readonly byte booleanPatternBits;
 
         public IntersectionMatrix(
             IntersectionMatrixDimension interiorInterior,
@@ -55,6 +55,9 @@ namespace NetTopologySuite.Optimized
             }
 
             this.packed = 0;
+            this.interiorBits = (byte)(((byte)interiorInterior << InteriorBits) | ((byte)interiorBoundary << BoundaryBits) | ((byte)interiorExterior << ExteriorBits));
+            this.boundaryBits = (byte)(((byte)boundaryInterior << InteriorBits) | ((byte)boundaryBoundary << BoundaryBits) | ((byte)boundaryExterior << ExteriorBits));
+            this.exteriorBits = (byte)(((byte)exteriorInterior << InteriorBits) | ((byte)exteriorBoundary << BoundaryBits) | ((byte)exteriorExterior << ExteriorBits));
             this.booleanPatternBits = (byte)
             (
                 (interiorInterior == 0 ? 0 : 1 << 7) |
@@ -66,9 +69,6 @@ namespace NetTopologySuite.Optimized
                 (exteriorInterior == 0 ? 0 : 1 << 1) |
                 (exteriorBoundary == 0 ? 0 : 1 << 0)
             );
-            this.interiorBits = (byte)(((byte)interiorInterior << InteriorBits) | ((byte)interiorBoundary << BoundaryBits) | ((byte)interiorExterior << ExteriorBits));
-            this.boundaryBits = (byte)(((byte)boundaryInterior << InteriorBits) | ((byte)boundaryBoundary << BoundaryBits) | ((byte)boundaryExterior << ExteriorBits));
-            this.exteriorBits = (byte)(((byte)exteriorInterior << InteriorBits) | ((byte)exteriorBoundary << BoundaryBits) | ((byte)exteriorExterior << ExteriorBits));
         }
 
         private IntersectionMatrix(ReadOnlySpan<IntersectionMatrixDimension> dims) => this = new IntersectionMatrix(dims[0], dims[1], dims[2], dims[3], dims[4], dims[5], dims[6], dims[7], dims[8]);
