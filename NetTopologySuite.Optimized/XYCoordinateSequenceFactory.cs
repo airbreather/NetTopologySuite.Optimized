@@ -14,15 +14,11 @@ namespace NetTopologySuite.Optimized
         ICoordinateSequence ICoordinateSequenceFactory.Create(Coordinate[] coordinates) => this.Create(coordinates);
         public XYCoordinateSequence Create(Coordinate[] coordinates)
         {
-            if (!(coordinates?.Length > 0))
+            var seq = this.Create(coordinates?.Length ?? 0);
+            var rawData = seq.RawData;
+            for (int i = 0; i < rawData.Length; i++)
             {
-                return XYCoordinateSequence.Empty;
-            }
-
-            var seq = new XYCoordinateSequence(coordinates.Length);
-            for (int i = 0; i < coordinates.Length; i++)
-            {
-                seq.RawData[i] = new XYCoordinate(coordinates[i]);
+                rawData[i] = new XYCoordinate(coordinates[i]);
             }
 
             return seq;
@@ -31,16 +27,11 @@ namespace NetTopologySuite.Optimized
         ICoordinateSequence ICoordinateSequenceFactory.Create(ICoordinateSequence coordSeq) => this.Create(coordSeq);
         public XYCoordinateSequence Create(ICoordinateSequence coordSeq)
         {
-            if (!(coordSeq?.Count > 0))
+            var seq = this.Create(coordSeq?.Count ?? 0);
+            var rawData = seq.RawData;
+            for (int i = 0; i < rawData.Length; i++)
             {
-                return XYCoordinateSequence.Empty;
-            }
-
-            var seq = new XYCoordinateSequence(coordSeq.Count);
-            for (int i = 0; i < seq.Count; i++)
-            {
-                seq.SetX(i, coordSeq.GetX(i));
-                seq.SetY(i, coordSeq.GetY(i));
+                rawData[i] = new XYCoordinate(coordSeq.GetX(i), coordSeq.GetY(i));
             }
 
             return seq;
@@ -60,9 +51,7 @@ namespace NetTopologySuite.Optimized
                 throw new ArgumentOutOfRangeException(nameof(dimension), dimension, "Dimension must be 2");
             }
 
-            return size == 0
-                ? XYCoordinateSequence.Empty
-                : new XYCoordinateSequence(size);
+            return this.Create(size);
         }
 
         ICoordinateSequence ICoordinateSequenceFactory.Create(int size, Ordinates ordinates)
@@ -72,6 +61,11 @@ namespace NetTopologySuite.Optimized
                 throw new ArgumentOutOfRangeException(nameof(ordinates), ordinates, "Ordinates must be XY");
             }
 
+            return this.Create(size);
+        }
+
+        public XYCoordinateSequence Create(int size)
+        {
             return size == 0
                 ? XYCoordinateSequence.Empty
                 : new XYCoordinateSequence(size);
